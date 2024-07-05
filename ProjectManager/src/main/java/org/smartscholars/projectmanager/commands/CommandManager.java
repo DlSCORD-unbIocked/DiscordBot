@@ -14,40 +14,70 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.vc.JoinVoiceChannelCommand;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class CommandManager extends ListenerAdapter {
 
-    private final HashMap<String, ICommand> commands = new HashMap<>();
+    private final HashMap<String, Class<? extends ICommand>> commandClasses = new HashMap<>();
+    private final HashMap<String, ICommand> commandInstances = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
 
     public CommandManager() {
-        discoverAndRegisterCommands();
+        logger.info("Initializing CommandManager");
+        loadCommandsFromConfiguration();
     }
 
-    private void discoverAndRegisterCommands() {
-        Reflections reflections = new Reflections("org.smartscholars.projectmanager.commands");
-        Set<Class<? extends ICommand>> commandClasses = reflections.getSubTypesOf(ICommand.class);
+    private void loadCommandsFromConfiguration() {
+        logger.info("Loading commands from commands.config");
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("commands.config")) {
+            assert input != null;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+                reader.lines().forEach(this::loadAndRegisterCommand);
+            }
+        }
+        catch (Exception e) {
+            logger.error("Failed to load commands from configuration", e);
+        }
+    }
 
-        for (Class<? extends ICommand> commandClass : commandClasses) {
-            if (commandClass.isAnnotationPresent(CommandInfo.class)) {
-                CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
-                try {
-                    ICommand commandInstance = commandClass.getDeclaredConstructor().newInstance();
-                    commands.put(info.name(), commandInstance);
+    private void loadAndRegisterCommand(String className) {
+        try {
+            logger.info("Loading command: {}", className);
+            Class<?> clazz = Class.forName(className);
+            if (ICommand.class.isAssignableFrom(clazz)) {
+                @SuppressWarnings("unchecked")
+                Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
+                if (commandClass.isAnnotationPresent(CommandInfo.class)) {
+                    CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
+                    commandClasses.put(info.name(), commandClass);
                 }
-                catch (Exception e) {
-                    logger.error("Failed to instantiate command: {}", info.name(), e);
+                else {
+                    logger.error("Command class does not have CommandInfo annotation: {}", className);
                 }
             }
+            else {
+                logger.error("Class does not implement ICommand interface: {}", className);
+            }
+        }
+        catch (ClassNotFoundException e) {
+            logger.error("Class not found for command: {}", className, e);
+        }
+        catch (ClassCastException e) {
+            logger.error("Class cannot be cast to ICommand: {}", className, e);
+        }
+        catch (Exception e) {
+            logger.error("Unexpected error while loading command: {}", className, e);
         }
     }
 
     private void registerCommands(Object target) {
         //create something to reset commands (do later)
-        List<CommandData> commandDataList = commands.entrySet().stream()
-                .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getClass().getAnnotation(CommandInfo.class).description()))
+        List<CommandData> commandDataList = commandClasses.entrySet().stream()
+                .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getAnnotation(CommandInfo.class).description()))
                 .collect(Collectors.toList());
 
         if (target instanceof Guild guild) {
@@ -63,13 +93,26 @@ public class CommandManager extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         String commandName = event.getName();
-        ICommand command = commands.get(commandName);
+        ICommand command = commandInstances.get(commandName);
+        if (command == null) {
+            Class<? extends ICommand> commandClass = commandClasses.get(commandName);
+            if (commandClass != null) {
+                try {
+                    command = commandClass.getDeclaredConstructor().newInstance();
+                    commandInstances.put(commandName, command);
+                } catch (Exception e) {
+                    logger.error("Failed to instantiate command: {}", commandName, e);
+                    return;
+                }
+            }
+        }
+
         if (command != null) {
             try {
                 command.execute(event);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.error("Error executing command: {}", commandName, e);
+                command.fallback(event, e); // Use the fallback method
             }
         }
     }
