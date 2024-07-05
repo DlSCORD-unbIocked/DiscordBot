@@ -4,10 +4,11 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.ICommand;
+import org.smartscholars.projectmanager.commands.Permission;
 
 import java.util.Objects;
 
-@CommandInfo(name = "leave", description = "The bot will leave the voice channel")
+@CommandInfo(name = "leave", description = "The bot will leave the voice channel", permissions = {Permission.MEMBER})
 public class LeaveVoiceChannelCommand implements ICommand {
     @Override
     public void execute(SlashCommandInteractionEvent event) {

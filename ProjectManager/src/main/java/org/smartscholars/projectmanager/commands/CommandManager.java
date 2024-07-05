@@ -2,6 +2,7 @@ package org.smartscholars.projectmanager.commands;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -96,12 +97,22 @@ public class CommandManager extends ListenerAdapter {
                 .collect(Collectors.toList());
 
         if (target instanceof Guild guild) {
-            logger.info("Registering commands for guild: {}", guild.getName());
-            guild.updateCommands().addCommands(commandDataList).queue();
+            try {
+                logger.info("Registering commands for guild: {}", guild.getName());
+                guild.updateCommands().addCommands(commandDataList).queue();
+            }
+            catch (Exception e) {
+                logger.error("Failed to register commands for guild: {}", guild.getName(), e);
+            }
         }
         else if (target instanceof JDA) {
-            logger.info("Registering global commands");
-            ((JDA) target).updateCommands().addCommands(commandDataList).queue();
+            try {
+                logger.info("Registering global commands");
+                ((JDA) target).updateCommands().addCommands(commandDataList).queue();
+            }
+            catch (Exception e) {
+                logger.error("Failed to register global commands", e);
+            }
         }
     }
 
@@ -122,13 +133,30 @@ public class CommandManager extends ListenerAdapter {
             }
         }
         if (command != null) {
+            CommandInfo info = command.getClass().getAnnotation(CommandInfo.class);
+            boolean hasPermission = Arrays.stream(info.permissions()).allMatch(permission ->
+                    hasPermission(event.getMember(), permission)); // Adjusted to use the hasPermission method
+            if (!hasPermission) {
+                event.reply("You do not have permission to use this command").setEphemeral(true).queue();
+                return;
+            }
             try {
                 command.execute(event);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.error("Error executing command: {}", commandName, e);
-                command.fallback(event, e); // Use the fallback method
+                command.fallback(event, e);
             }
         }
+    }
+
+    private boolean hasPermission(Member member, Permission permission) {
+        return switch (permission) {
+            case ADMINISTRATOR -> member != null && member.hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR);
+            case MODERATOR -> member != null && member.hasPermission(net.dv8tion.jda.api.Permission.KICK_MEMBERS);
+            case MEMBER -> member != null;
+            default -> false;
+        };
     }
 
     //guild commands
