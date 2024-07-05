@@ -13,10 +13,13 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.vc.JoinVoiceChannelCommand;
+import org.smartscholars.projectmanager.util.FileWatcher;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,10 +32,22 @@ public class CommandManager extends ListenerAdapter {
     public CommandManager() {
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
+        Path configPath = Paths.get("ProjectManager/src/main/resources").toAbsolutePath();
+        // Pass `this` to use the current instance instead of creating a new one
+        FileWatcher watcher = new FileWatcher(configPath, this);
+        Thread watcherThread = new Thread(watcher);
+        watcherThread.start();
+    }
+
+    public void reloadCommands() {
+        logger.info("Reloading commands");
+        commandClasses.clear();
+        commandInstances.clear();
+        loadCommandsFromConfiguration();
     }
 
     private void loadCommandsFromConfiguration() {
-        logger.info("Loading commands from commands.config");
+        logger.info("Loading commands from configuration");
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("commands.config")) {
             assert input != null;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
@@ -46,13 +61,13 @@ public class CommandManager extends ListenerAdapter {
 
     private void loadAndRegisterCommand(String className) {
         try {
-            logger.info("Loading command: {}", className);
             Class<?> clazz = Class.forName(className);
             if (ICommand.class.isAssignableFrom(clazz)) {
                 @SuppressWarnings("unchecked")
                 Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
                 if (commandClass.isAnnotationPresent(CommandInfo.class)) {
                     CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
+                    logger.info("Loading command: {}", info.name());
                     commandClasses.put(info.name(), commandClass);
                 }
                 else {
@@ -106,7 +121,6 @@ public class CommandManager extends ListenerAdapter {
                 }
             }
         }
-
         if (command != null) {
             try {
                 command.execute(event);
