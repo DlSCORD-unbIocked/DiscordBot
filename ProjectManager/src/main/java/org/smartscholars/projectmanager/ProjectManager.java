@@ -1,17 +1,26 @@
 package org.smartscholars.projectmanager;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
+import org.smartscholars.projectmanager.eventlisteners.EventListenerManager;
+import org.smartscholars.projectmanager.eventlisteners.IEvent;
+import org.smartscholars.projectmanager.eventlisteners.OnReadyListener;
 
 import javax.security.auth.login.LoginException;
+import java.util.Arrays;
+import java.util.List;
 
 public class ProjectManager {
 
     private final ShardManager shardManager;
+    private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
 
     public ProjectManager() throws LoginException {
         Dotenv dotenv = Dotenv.load();
@@ -20,7 +29,19 @@ public class ProjectManager {
         builder.setActivity(Activity.playing("with your projects"));
         builder.setStatus(OnlineStatus.DO_NOT_DISTURB);
         shardManager = builder.build();
-        shardManager.addEventListener(new CommandManager());
+
+        CommandManager commandManager = new CommandManager();
+        shardManager.addEventListener(commandManager);
+
+        List<IEvent> eventListeners = List.of(
+                new OnReadyListener(commandManager)
+        );
+
+        logger.info("Registering event listeners.");
+        EventListenerManager loader = new EventListenerManager(shardManager, eventListeners);
+        loader.registerEventListeners();
+
+        logger.info("Bot is online.");
     }
 
     public ShardManager getShardManager() {
