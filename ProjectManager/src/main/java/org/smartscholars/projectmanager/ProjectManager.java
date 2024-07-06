@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -20,6 +21,7 @@ public class ProjectManager {
         builder.setActivity(Activity.playing("with your projects"));
         builder.setStatus(OnlineStatus.DO_NOT_DISTURB);
         shardManager = builder.build();
+
         shardManager.addEventListener(new CommandManager());
     }
 

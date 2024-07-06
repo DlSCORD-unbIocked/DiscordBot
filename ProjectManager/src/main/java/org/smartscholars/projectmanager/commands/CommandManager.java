@@ -29,8 +29,10 @@ public class CommandManager extends ListenerAdapter {
     private final HashMap<String, Class<? extends ICommand>> commandClasses = new HashMap<>();
     private final HashMap<String, ICommand> commandInstances = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
+    private static JDA jda;
 
-    public CommandManager() {
+    public CommandManager(JDA jda) {
+        this.jda = jda;
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
         Path configPath = Paths.get("ProjectManager/src/main/resources").toAbsolutePath();
@@ -116,6 +118,28 @@ public class CommandManager extends ListenerAdapter {
         }
     }
 
+    public void registerNewCommandsForGuild(JDA jda, String guildId) {
+        Guild guild = jda.getGuildById(guildId);
+        if (guild == null) {
+            logger.error("Guild not found for ID: {}", guildId);
+            return;
+        }
+
+        List<CommandData> newCommandDataList = commandClasses.entrySet().stream()
+                .filter(entry -> !commandInstances.containsKey(entry.getKey())) // Filter for new commands only
+                .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getAnnotation(CommandInfo.class).description()))
+                .collect(Collectors.toList());
+
+        if (!newCommandDataList.isEmpty()) {
+            guild.updateCommands().addCommands(newCommandDataList).queue(
+                success -> logger.info("New commands registered successfully for guild: {}", guild.getName()),
+                failure -> logger.error("Failed to register new commands for guild: {}", guild.getName(), failure)
+            );
+        } else {
+            logger.info("No new commands to register for guild: {}", guild.getName());
+        }
+    }
+
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         String commandName = event.getName();
@@ -157,6 +181,14 @@ public class CommandManager extends ListenerAdapter {
             case MEMBER -> member != null;
             default -> false;
         };
+    }
+
+    public static HashMap<String, Class<? extends ICommand>> getCommandClasses() {
+        return new CommandManager(jda).commandClasses;
+    }
+
+    public static JDA getJda() {
+        return jda;
     }
 
     //guild commands

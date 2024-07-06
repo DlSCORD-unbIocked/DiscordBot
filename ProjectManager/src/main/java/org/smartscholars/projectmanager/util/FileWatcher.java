@@ -37,12 +37,14 @@ public class FileWatcher implements Runnable {
                     Path changed = (Path) event.context();
                     if (changed.endsWith("commands.config")) {
                         commandManager.reloadCommands();
+                        commandManager.registerNewCommandsForGuild(CommandManager.getJda(), "1086425022245118033");
                         logger.info("Reloaded commands");
                     }
                 }
                 key.reset();
             }
-        } catch (IOException | InterruptedException e) {
+        }
+        catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.error("Error while watching file", e);
         }
