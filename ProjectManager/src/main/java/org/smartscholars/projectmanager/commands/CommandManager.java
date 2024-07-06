@@ -13,12 +13,14 @@ import org.jetbrains.annotations.NotNull;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartscholars.projectmanager.commands.administrator.ReloadCommand;
 import org.smartscholars.projectmanager.commands.vc.JoinVoiceChannelCommand;
 import org.smartscholars.projectmanager.util.FileWatcher;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -31,12 +33,10 @@ public class CommandManager extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
     private static JDA jda;
 
-    public CommandManager(JDA jda) {
-        this.jda = jda;
+    public CommandManager() {
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
         Path configPath = Paths.get("ProjectManager/src/main/resources").toAbsolutePath();
-        // Pass `this` to use the current instance instead of creating a new one
         FileWatcher watcher = new FileWatcher(configPath, this);
         Thread watcherThread = new Thread(watcher);
         watcherThread.start();
@@ -92,7 +92,7 @@ public class CommandManager extends ListenerAdapter {
         }
     }
 
-    private void registerCommands(Object target) {
+    public void registerCommands(Object target) {
         //create something to reset commands (do later)
         List<CommandData> commandDataList = commandClasses.entrySet().stream()
                 .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getAnnotation(CommandInfo.class).description()))
@@ -118,6 +118,7 @@ public class CommandManager extends ListenerAdapter {
         }
     }
 
+    //only for dev guild
     public void registerNewCommandsForGuild(JDA jda, String guildId) {
         Guild guild = jda.getGuildById(guildId);
         if (guild == null) {
@@ -135,7 +136,8 @@ public class CommandManager extends ListenerAdapter {
                 success -> logger.info("New commands registered successfully for guild: {}", guild.getName()),
                 failure -> logger.error("Failed to register new commands for guild: {}", guild.getName(), failure)
             );
-        } else {
+        }
+        else {
             logger.info("No new commands to register for guild: {}", guild.getName());
         }
     }
@@ -145,32 +147,50 @@ public class CommandManager extends ListenerAdapter {
         String commandName = event.getName();
         ICommand command = commandInstances.get(commandName);
         if (command == null) {
-            Class<? extends ICommand> commandClass = commandClasses.get(commandName);
-            if (commandClass != null) {
-                try {
-                    command = commandClass.getDeclaredConstructor().newInstance();
-                    commandInstances.put(commandName, command);
-                } catch (Exception e) {
-                    logger.error("Failed to instantiate command: {}", commandName, e);
-                    return;
-                }
+            command = createCommandInstance(commandName);
+            if (command != null) {
+                commandInstances.put(commandName, command);
             }
-        }
-        if (command != null) {
-            CommandInfo info = command.getClass().getAnnotation(CommandInfo.class);
-            boolean hasPermission = Arrays.stream(info.permissions()).allMatch(permission ->
-                    hasPermission(event.getMember(), permission)); // Adjusted to use the hasPermission method
-            if (!hasPermission) {
-                event.reply("You do not have permission to use this command").setEphemeral(true).queue();
+            else {
+                logger.error("Could not create command instance for: {}", commandName);
                 return;
             }
-            try {
-                command.execute(event);
+        }
+        CommandInfo info = command.getClass().getAnnotation(CommandInfo.class);
+        boolean hasPermission = Arrays.stream(info.permissions()).allMatch(permission ->
+                hasPermission(event.getMember(), permission));
+        if (!hasPermission) {
+            event.reply("You do not have permission to use this command").setEphemeral(true).queue();
+            return;
+        }
+        try {
+            command.execute(event);
+        }
+        catch (Exception e) {
+            logger.error("Error executing command: {}", commandName, e);
+            command.fallback(event, e);
+        }
+    }
+
+    private ICommand createCommandInstance(String commandName) {
+        Class<? extends ICommand> commandClass = commandClasses.get(commandName);
+        if (commandClass == null) {
+            logger.error("Command class not found for command: {}", commandName);
+            return null;
+        }
+        try {
+            if (ReloadCommand.class.isAssignableFrom(commandClass)) {
+                // Assuming ReloadCommand has a constructor that accepts CommandManager
+                return commandClass.getDeclaredConstructor(CommandManager.class).newInstance(this);
             }
-            catch (Exception e) {
-                logger.error("Error executing command: {}", commandName, e);
-                command.fallback(event, e);
+            else {
+                // For other commands with no-argument constructor
+                return commandClass.getDeclaredConstructor().newInstance();
             }
+        }
+        catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            logger.error("Failed to instantiate command: {}", commandName, e);
+            return null;
         }
     }
 
@@ -184,24 +204,14 @@ public class CommandManager extends ListenerAdapter {
     }
 
     public static HashMap<String, Class<? extends ICommand>> getCommandClasses() {
-        return new CommandManager(jda).commandClasses;
+        return new CommandManager().commandClasses;
+    }
+
+    public void setJda(JDA jda) {
+        CommandManager.jda = jda;
     }
 
     public static JDA getJda() {
         return jda;
-    }
-
-    //guild commands
-
-    @Override
-    public void onGuildReady(@NotNull GuildReadyEvent event) {
-        registerCommands(event.getGuild());
-    }
-
-    //global commands
-
-    @Override
-    public void onReady(@NotNull ReadyEvent event) {
-        registerCommands(event.getJDA());
     }
 }

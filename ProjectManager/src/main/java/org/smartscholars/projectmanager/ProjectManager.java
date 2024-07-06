@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.smartscholars.projectmanager.commands.CommandManager;
+import org.smartscholars.projectmanager.eventlisteners.OnReadyListener;
 
 import javax.security.auth.login.LoginException;
 
@@ -22,7 +23,9 @@ public class ProjectManager {
         builder.setStatus(OnlineStatus.DO_NOT_DISTURB);
         shardManager = builder.build();
 
-        shardManager.addEventListener(new CommandManager());
+        CommandManager commandManager = new CommandManager();
+        shardManager.addEventListener(commandManager);
+        shardManager.addEventListener(new OnReadyListener(commandManager));
     }
 
     public ShardManager getShardManager() {
