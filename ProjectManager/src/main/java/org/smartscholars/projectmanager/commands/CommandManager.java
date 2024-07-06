@@ -3,18 +3,16 @@ package org.smartscholars.projectmanager.commands;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import org.jetbrains.annotations.NotNull;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.administrator.ReloadCommand;
-import org.smartscholars.projectmanager.commands.vc.JoinVoiceChannelCommand;
 import org.smartscholars.projectmanager.util.FileWatcher;
 
 import java.io.BufferedReader;
@@ -94,9 +92,17 @@ public class CommandManager extends ListenerAdapter {
 
     public void registerCommands(Object target) {
         //create something to reset commands (do later)
-        List<CommandData> commandDataList = commandClasses.entrySet().stream()
-                .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getAnnotation(CommandInfo.class).description()))
-                .collect(Collectors.toList());
+        List<CommandData> commandDataList = new ArrayList<>();
+        for (String commandName : commandClasses.keySet()) {
+            ICommand commandInstance = createCommandInstance(commandName);
+            if (commandInstance != null) {
+                CommandInfo info = commandInstance.getClass().getAnnotation(CommandInfo.class);
+                SlashCommandData commandData = Commands.slash(info.name(), info.description());
+                commandData.addOptions(Arrays.stream(info.options())
+                        .map(option -> new OptionData(option.type(), option.name(), option.description(), option.required())).toArray(OptionData[]::new));
+                commandDataList.add(commandData);
+            }
+        }
 
         if (target instanceof Guild guild) {
             try {
@@ -133,7 +139,7 @@ public class CommandManager extends ListenerAdapter {
 
         if (!newCommandDataList.isEmpty()) {
             guild.updateCommands().addCommands(newCommandDataList).queue(
-                success -> logger.info("New commands registered successfully for guild: {}", guild.getName()),
+                    _ -> logger.info("New commands registered successfully for guild: {}", guild.getName()),
                 failure -> logger.error("Failed to register new commands for guild: {}", guild.getName(), failure)
             );
         }
@@ -199,7 +205,6 @@ public class CommandManager extends ListenerAdapter {
             case ADMINISTRATOR -> member != null && member.hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR);
             case MODERATOR -> member != null && member.hasPermission(net.dv8tion.jda.api.Permission.KICK_MEMBERS);
             case MEMBER -> member != null;
-            default -> false;
         };
     }
 
