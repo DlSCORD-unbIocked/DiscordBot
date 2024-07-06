@@ -9,16 +9,14 @@ import org.smartscholars.projectmanager.commands.ICommand;
 
 import java.awt.*;
 
-@CommandInfo(name = "image", description = "Edits an image in many different ways")
-public class ImageCommand implements ICommand {
+@CommandInfo(name = "edit", description = "Edits an image in many different ways")
+public class EditCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
         // Define a command with options
-        event.getGuild().upsertCommand("edit", "edit image")
-                .addOption(OptionType.STRING, "image_url", "select the image url to edit", true) // Marked as required
-                .addOption(OptionType.STRING, "effect", "the effect to apply", true) // Another option, also marked as required
-                .queue();
-        event.reply("Command with options has been set up").queue();
+        String url = event.getOption("image_url").getAsString();
+        String effect = event.getOption("effect").getAsString();
+        event.reply("Command with options has been set up " + url + effect).queue();
     }
 }

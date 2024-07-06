@@ -4,8 +4,12 @@ import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
@@ -27,8 +31,11 @@ public class ProjectManager {
         String botToken = dotenv.get("BOT_TOKEN");
         DefaultShardManagerBuilder builder = DefaultShardManagerBuilder.createDefault(botToken);
         builder.setActivity(Activity.playing("with your projects"));
-        builder.setStatus(OnlineStatus.DO_NOT_DISTURB);
+        builder.setStatus(OnlineStatus.ONLINE);
         shardManager = builder.build();
+
+        //options
+
 
         CommandManager commandManager = new CommandManager();
         shardManager.addEventListener(commandManager);
