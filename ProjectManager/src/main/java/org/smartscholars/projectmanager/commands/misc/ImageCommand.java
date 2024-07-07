@@ -1,6 +1,5 @@
 package org.smartscholars.projectmanager.commands.misc;
 import java.io.*;
-import java.awt.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -9,9 +8,6 @@ import java.net.http.HttpResponse;
 import io.github.cdimascio.dotenv.Dotenv;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.channels.Channel;
-import java.util.Base64;
-import java.util.Base64.Encoder;
 import java.util.Objects;
 
 import javax.imageio.ImageIO;
@@ -24,7 +20,6 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
-import org.smartscholars.projectmanager.commands.CommandManager;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.CommandOption;
 
