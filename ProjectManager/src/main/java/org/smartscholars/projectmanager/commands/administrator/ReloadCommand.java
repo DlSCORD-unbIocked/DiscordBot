@@ -11,7 +11,8 @@ public class ReloadCommand implements ICommand {
 
     private final CommandManager commandManager;
 
-    public ReloadCommand(CommandManager commandManager) {
+    public ReloadCommand(CommandManager commandManager)
+    {
         this.commandManager = commandManager;
     }
 

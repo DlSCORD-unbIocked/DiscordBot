@@ -137,15 +137,23 @@ public class CommandManager extends ListenerAdapter {
                 .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getAnnotation(CommandInfo.class).description()))
                 .collect(Collectors.toList());
 
-        if (!newCommandDataList.isEmpty()) {
-            guild.updateCommands().addCommands(newCommandDataList).queue(
+        guild.retrieveCommands().queue(commands -> {
+            for (var command : commands) {
+                command.delete().queue(
+                    success -> logger.info("Successfully deleted command: {}", command.getName()),
+                    failure -> logger.error("Failed to delete command: {}", command.getName(), failure)
+                );
+            }
+
+            if (!newCommandDataList.isEmpty()) {
+                guild.updateCommands().addCommands(newCommandDataList).queue(
                     _ -> logger.info("New commands registered successfully for guild: {}", guild.getName()),
-                failure -> logger.error("Failed to register new commands for guild: {}", guild.getName(), failure)
-            );
-        }
-        else {
-            logger.info("No new commands to register for guild: {}", guild.getName());
-        }
+                    failure -> logger.error("Failed to register new commands for guild: {}", guild.getName(), failure)
+                );
+            } else {
+                logger.info("No new commands to register for guild: {}", guild.getName());
+            }
+        }, failure -> logger.error("Failed to retrieve existing commands for guild: {}", guild.getName(), failure));
     }
 
     @Override
