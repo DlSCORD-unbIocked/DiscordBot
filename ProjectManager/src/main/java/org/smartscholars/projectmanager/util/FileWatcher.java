@@ -1,5 +1,6 @@
 package org.smartscholars.projectmanager.util;
 
+import net.dv8tion.jda.api.entities.Guild;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
@@ -13,7 +14,7 @@ public class FileWatcher implements Runnable {
     private final Logger logger = LoggerFactory.getLogger(FileWatcher.class);
     private final Path pathToWatch;
     private final CommandManager commandManager;
-    private long lastReloadTime = 0; // Track the last reload time
+    private long lastReloadTime = 0;
 
     public FileWatcher(Path pathToWatch, CommandManager commandManager) {
         this.pathToWatch = pathToWatch;
@@ -38,14 +39,12 @@ public class FileWatcher implements Runnable {
                     Path changed = (Path) event.context();
                     if (changed.endsWith("commands.config")) {
                         long currentTime = System.currentTimeMillis();
-                        // Delay in milliseconds
                         long reloadDelay = 500;
                         if (currentTime - lastReloadTime > reloadDelay) {
-                            commandManager.reloadCommands();
-                            // Only register commands in dev server for testing
-                            //commandManager.registerNewCommandsForGuild(CommandManager.getJda(), "1086425022245118033");
+                            Guild guild = CommandManager.getJda().getGuildById("1086425022245118033");
+                            commandManager.reloadCommands(guild);
                             logger.info("Reloaded commands");
-                            lastReloadTime = currentTime; // Update last reload time
+                            lastReloadTime = currentTime;
                         }
                     }
                 }

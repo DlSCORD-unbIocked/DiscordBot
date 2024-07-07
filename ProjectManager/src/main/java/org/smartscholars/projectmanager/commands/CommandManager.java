@@ -31,6 +31,8 @@ public class CommandManager extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
     private static JDA jda;
 
+    private static final Map<String, Long> commandInstanceCreationTimes = new HashMap<>();
+
     public CommandManager() {
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
@@ -40,18 +42,26 @@ public class CommandManager extends ListenerAdapter {
         watcherThread.start();
     }
 
-    public void reloadCommands() {
+    public void reloadCommands(Guild guild) {
         logger.info("Reloading commands");
+        logger.info(commandClasses.toString());
+        logger.info(commandInstances.toString());
         commandClasses.clear();
         commandInstances.clear();
+
         loadCommandsFromConfiguration();
-        commandClasses.keySet().forEach(this::createCommandInstanceAndAddToInstances);
-    }
-    private void createCommandInstanceAndAddToInstances(String commandName) {
-        ICommand commandInstance = createCommandInstance(commandName);
-        if (commandInstance != null) {
-            commandInstances.put(commandName, commandInstance);
-        }
+
+        commandClasses.keySet().forEach(commandName -> {
+            ICommand commandInstance = createCommandInstance(commandName);
+            if (commandInstance != null) {
+                commandInstances.put(commandName, commandInstance);
+            } else {
+                logger.error("Failed to create instance for command: {}", commandName);
+            }
+        });
+        logger.info(commandClasses.toString());
+        logger.info(commandInstances.toString());
+        reloadGuildCommands(guild);
     }
 
     private void loadCommandsFromConfiguration() {
@@ -130,10 +140,15 @@ public class CommandManager extends ListenerAdapter {
             }
         }
     }
-    public void registerGuildCommands(Guild guild) {
+    public void reloadGuildCommands(Guild guild) {
         List<CommandData> commandDataList = commandClasses.values().stream()
             .map(this::createCommandDataFromCommandClass)
             .collect(Collectors.toList());
+
+        guild.updateCommands().queue(
+            _ -> logger.info("Successfully cleared commands in Discord"),
+            failure -> logger.error("Failed to clear commands in Discord", failure)
+        );
 
         guild.updateCommands().addCommands(commandDataList).queue(
             _ -> logger.info("Successfully registered new commands"),
@@ -188,17 +203,22 @@ public class CommandManager extends ListenerAdapter {
             return null;
         }
         try {
+            ICommand instance;
             if (ReloadCommand.class.isAssignableFrom(commandClass)) {
-                return commandClass.getDeclaredConstructor(CommandManager.class).newInstance(this);
+                instance = commandClass.getDeclaredConstructor(CommandManager.class).newInstance(this);
+            } else {
+                instance = commandClass.getDeclaredConstructor().newInstance();
             }
-            else {
-                return commandClass.getDeclaredConstructor().newInstance();
-            }
-        }
-        catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            updateCommandInstanceCreationTime(commandName); // Update the creation time
+            return instance;
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.error("Failed to instantiate command: {}", commandName, e);
             return null;
         }
+    }
+
+    public static void updateCommandInstanceCreationTime(String commandName) {
+        commandInstanceCreationTimes.put(commandName, System.currentTimeMillis());
     }
 
     private boolean hasPermission(Member member, Permission permission) {
