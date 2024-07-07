@@ -33,6 +33,7 @@ import org.smartscholars.projectmanager.commands.CommandOption;
         }
 )
 public class ImageCommand implements ICommand {
+    public static final String[] endpoints = {"abstract", "ads", "balls", "bayer", "bevel", "billboard", "blocks", "blur", "boil", "bomb", "bonks", "bubble", "burn", "canny", "cartoon", "cinema", "clock", "cloth", "contour", "cow", "cracks", "cube", "dilate", "dither", "dots", "earthquake", "emojify", "endless", "equations", "explicit", "fall", "fan", "fire", "flag", "flush", "gallery", "gameboy_camera", "glitch", "globe", "half_invert", "heart_diffraction", "heart_locket", "hearts", "infinity", "ipcam", "kanye", "knit", "lamp", "laundry", "layers", "letters", "lines", "liquefy", "logoff", "lsd", "magnify", "matrix", "melt", "minecraft", "neon", "optics", "painting", "paparazzi", "patpat", "pattern", "phase", "phone", "pizza", "plank", "plates", "poly", "print", "pyramid", "radiate", "rain", "reflection", "ripped", "ripple", "roll", "scrapbook", "sensitive", "shear", "shine", "shock", "shoot", "shred", "slice", "soap", "spikes", "spin", "stereo", "stretch", "tiles", "tunnel", "tv", "wall", "warp", "wave", "wiggle", "zonk"};
 
     private static final Logger logger = LoggerFactory.getLogger(ImageCommand.class);
 
@@ -42,18 +43,18 @@ public class ImageCommand implements ICommand {
         String authToken = dotenv.get("IMAGE_TOKEN");
 
         String url = Objects.requireNonNull(event.getOption("image_url")).getAsString();
-        // Validate URL format (basic validation)
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             event.reply("Invalid image URL. Please ensure it starts with http:// or https://").setEphemeral(true).queue();
             return;
+        // Validate URL format (basic validation)
         }
-
         String effect = Objects.requireNonNull(event.getOption("effect")).getAsString();
 //        // Example validation for effect, assuming a predefined list of effects
-//        if (!effect.matches("effect1|effect2|effect3")) {
-//            event.reply("Invalid effect. Please choose from effect1, effect2, or effect3.").setEphemeral(true).queue();
-//            return;
-//        }
+        if (!validateEffect(effect)) {
+            event.reply("Invalid effect. Please choose from the predefined list (See /image-options).").setEphemeral(true).queue();
+            return;
+        }
+
 
         String apiUrl = "https://api.jeyy.xyz/v2/image/" + effect + "/?image_url=" + url;
 
@@ -118,5 +119,14 @@ public class ImageCommand implements ICommand {
             event.reply("An error occurred while fetching the image.").setEphemeral(true).queue();
             logger.error("An error occurred while fetching the image", e);
         }
+    }
+
+    private boolean validateEffect(String effect) {
+        for (String endpoint : endpoints) {
+            if (effect.equals(endpoint)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
