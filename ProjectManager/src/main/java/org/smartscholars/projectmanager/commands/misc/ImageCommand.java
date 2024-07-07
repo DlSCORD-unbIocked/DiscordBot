@@ -34,7 +34,7 @@ import org.smartscholars.projectmanager.commands.CommandOption;
 )
 public class ImageCommand implements ICommand {
     public static final String[] endpoints = {"abstract", "ads", "balls", "bayer", "bevel", "billboard", "blocks", "blur", "boil", "bomb", "bonks", "bubble", "burn", "canny", "cartoon", "cinema", "clock", "cloth", "contour", "cow", "cracks", "cube", "dilate", "dither", "dots", "earthquake", "emojify", "endless", "equations", "explicit", "fall", "fan", "fire", "flag", "flush", "gallery", "gameboy_camera", "glitch", "globe", "half_invert", "heart_diffraction", "heart_locket", "hearts", "infinity", "ipcam", "kanye", "knit", "lamp", "laundry", "layers", "letters", "lines", "liquefy", "logoff", "lsd", "magnify", "matrix", "melt", "minecraft", "neon", "optics", "painting", "paparazzi", "patpat", "pattern", "phase", "phone", "pizza", "plank", "plates", "poly", "print", "pyramid", "radiate", "rain", "reflection", "ripped", "ripple", "roll", "scrapbook", "sensitive", "shear", "shine", "shock", "shoot", "shred", "slice", "soap", "spikes", "spin", "stereo", "stretch", "tiles", "tunnel", "tv", "wall", "warp", "wave", "wiggle", "zonk"};
-
+    //List of ones that bug: cow, ace,
     private static final Logger logger = LoggerFactory.getLogger(ImageCommand.class);
 
     @Override
