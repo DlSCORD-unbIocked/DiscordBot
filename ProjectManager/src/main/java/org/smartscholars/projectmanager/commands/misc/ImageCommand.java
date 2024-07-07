@@ -49,43 +49,30 @@ public class ImageCommand implements ICommand {
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+                .uri(URI.create(apiUrl))
                 .header("Authorization", "Bearer " + authToken)
                 .build();
 
 
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            // Process the response body here
+            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            byte[] imageBytes = response.body();
 
+            if (imageBytes.length > 0) {
+                EmbedBuilder embed = new EmbedBuilder();
+                embed.setTitle("Edited Image");
+                embed.setImage("attachment://image.png"); // This will be replaced by the actual image in the next step
 
-            HttpRequest post = new Http
-                    .uri(URI.create(url))
-                    .header("Authorization", "Bearer " + authToken)
-
-
-            String responseBody = response.body();
-
-//            String imageBytes = Base64.getEncoder().encodeToString(responseBody.getBytes());
-//            byte[] imageBytes = responseBody.getBytes();
-//            InputStream is = new ByteArrayInputStream(imageBytes);
-//
-//            //input stream is file
-//            BufferedImage bufferedImage = ImageIO.read(is);
-//
-//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//            ImageIO.write(bufferedImage, "png", baos); // Use appropriate format, e.g., "png"
-//            byte[] bytes = baos.toByteArray();
-//            EmbedBuilder embed = new EmbedBuilder();
-
-            embed.setImage("attachment://image.png");
-            event.replyEmbeds(embed.build())
-                    .addFiles(FileUpload.fromData(imageBytes, "image.png"))
-                    .queue();
-//            event.replyFiles().queue();
-//            event.reply("Command with options has been set up. URL: " + url + ", Effect: " + effect + ". Response: " ).queue();
-        } catch (IOException | InterruptedException e) {
-            event.reply("An error occurred while fetching the URL.").queue();
+                event.replyEmbeds(embed.build())
+                        .addFiles(FileUpload.fromData(imageBytes, "image.png"))
+                        .queue();
+            }
+            else {
+                event.reply("No image was returned from the API.").setEphemeral(true).queue();
+            }
+        }
+        catch (IOException | InterruptedException e) {
+            event.reply("An error occurred while fetching the image.").setEphemeral(true).queue();
         }
 
 //        event.reply("Command with options has been set up " + url + effect).queue();
