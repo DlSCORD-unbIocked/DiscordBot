@@ -26,7 +26,7 @@ public class ReloadCommand implements ICommand {
         logger.info(Objects.requireNonNull(event.getGuild()).getId());
         if (Objects.requireNonNull(event.getGuild()).getId().equals("1086425022245118033")) {
             commandManager.reloadCommands();
-            commandManager.registerCommands(event.getGuild());
+            commandManager.registerGuildCommands(event.getGuild());
             event.reply("Reloaded commands").queue();
         }
     }

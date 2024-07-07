@@ -130,6 +130,26 @@ public class CommandManager extends ListenerAdapter {
             }
         }
     }
+    public void registerGuildCommands(Guild guild) {
+        List<CommandData> commandDataList = commandClasses.values().stream()
+            .map(this::createCommandDataFromCommandClass)
+            .collect(Collectors.toList());
+
+        guild.updateCommands().addCommands(commandDataList).queue(
+            _ -> logger.info("Successfully registered new commands"),
+            failure -> logger.error("Failed to register new commands", failure)
+        );
+    }
+
+    private CommandData createCommandDataFromCommandClass(Class<? extends ICommand> commandClass) {
+        CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
+        SlashCommandData commandData = Commands.slash(info.name(), info.description());
+        for (CommandOption option : info.options()) {
+            OptionData optionData = new OptionData(option.type(), option.name(), option.description(), option.required());
+            commandData.addOptions(optionData);
+        }
+        return commandData;
+    }
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
