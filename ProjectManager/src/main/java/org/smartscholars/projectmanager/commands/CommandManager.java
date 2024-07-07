@@ -45,6 +45,13 @@ public class CommandManager extends ListenerAdapter {
         commandClasses.clear();
         commandInstances.clear();
         loadCommandsFromConfiguration();
+        commandClasses.keySet().forEach(this::createCommandInstanceAndAddToInstances);
+    }
+    private void createCommandInstanceAndAddToInstances(String commandName) {
+        ICommand commandInstance = createCommandInstance(commandName);
+        if (commandInstance != null) {
+            commandInstances.put(commandName, commandInstance);
+        }
     }
 
     private void loadCommandsFromConfiguration() {
@@ -124,38 +131,6 @@ public class CommandManager extends ListenerAdapter {
         }
     }
 
-    //only for dev guild
-    public void registerNewCommandsForGuild(JDA jda, String guildId) {
-        Guild guild = jda.getGuildById(guildId);
-        if (guild == null) {
-            logger.error("Guild not found for ID: {}", guildId);
-            return;
-        }
-
-        List<CommandData> newCommandDataList = commandClasses.entrySet().stream()
-                .filter(entry -> !commandInstances.containsKey(entry.getKey())) // Filter for new commands only
-                .map(entry -> Commands.slash(entry.getKey(), entry.getValue().getAnnotation(CommandInfo.class).description()))
-                .collect(Collectors.toList());
-
-        guild.retrieveCommands().queue(commands -> {
-            for (var command : commands) {
-                command.delete().queue(
-                    success -> logger.info("Successfully deleted command: {}", command.getName()),
-                    failure -> logger.error("Failed to delete command: {}", command.getName(), failure)
-                );
-            }
-
-            if (!newCommandDataList.isEmpty()) {
-                guild.updateCommands().addCommands(newCommandDataList).queue(
-                    _ -> logger.info("New commands registered successfully for guild: {}", guild.getName()),
-                    failure -> logger.error("Failed to register new commands for guild: {}", guild.getName(), failure)
-                );
-            } else {
-                logger.info("No new commands to register for guild: {}", guild.getName());
-            }
-        }, failure -> logger.error("Failed to retrieve existing commands for guild: {}", guild.getName(), failure));
-    }
-
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         String commandName = event.getName();
@@ -194,11 +169,9 @@ public class CommandManager extends ListenerAdapter {
         }
         try {
             if (ReloadCommand.class.isAssignableFrom(commandClass)) {
-                // Assuming ReloadCommand has a constructor that accepts CommandManager
                 return commandClass.getDeclaredConstructor(CommandManager.class).newInstance(this);
             }
             else {
-                // For other commands with no-argument constructor
                 return commandClass.getDeclaredConstructor().newInstance();
             }
         }
