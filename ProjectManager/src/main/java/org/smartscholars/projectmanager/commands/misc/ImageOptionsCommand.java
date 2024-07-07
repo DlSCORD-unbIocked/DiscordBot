@@ -28,7 +28,7 @@ public class ImageOptionsCommand implements ICommand {
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(HelpCommand.class);
     public int totalPages;
     public static final int COMMANDS_PER_PAGE = 15;
-    private static final List<List<String>> pages = paginateCommands(List.of(ImageCommand.endpoints), COMMANDS_PER_PAGE);
+    public static final List<List<String>> pages = paginateCommands(List.of(ImageCommand.endpoints), COMMANDS_PER_PAGE);
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
@@ -40,7 +40,7 @@ public class ImageOptionsCommand implements ICommand {
         if (currentPage > pages.size()) currentPage = pages.size();
         if (currentPage < 1) currentPage = 1;
 
-        EmbedBuilder embed = buildPageEmbed(pages.get(currentPage - 1), currentPage, currentPage.size(), );
+        EmbedBuilder embed = buildPageEmbed(pages.get(currentPage - 1), currentPage, pages.size());
         Button galleryButton = Button.link("https://jeyy.xyz/gallery", "View Options Gallery");
         event.replyEmbeds(embed.build()).addActionRow(galleryButton).addActionRow(
                         Button.primary("left_image", Emoji.fromUnicode("◀")), // Button with only a label
@@ -50,13 +50,11 @@ public class ImageOptionsCommand implements ICommand {
 
     }
 
-
-
     private static java.util.List<java.util.List<String>> paginateCommands(java.util.List<String> commands, int pageSize) {
         return new ArrayList<>(ListUtils.partition(commands, pageSize));
     }
 
-    private static EmbedBuilder buildPageEmbed(List<String> commandsOnPage, int current, int totalPages) {
+    public static EmbedBuilder buildPageEmbed(List<String> commandsOnPage, int current, int totalPages) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("Image edit options");
         embed.setDescription("Page " + current + " of " + totalPages);
@@ -65,9 +63,5 @@ public class ImageOptionsCommand implements ICommand {
         return embed;
     }
 
-    public static EmbedBuilder nextPage(int current) {
-
-        return buildPageEmbed(pages.get(current - 1), current, pages.size());
-    }
 
 }
