@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager.util;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -8,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartscholars.projectmanager.commands.CommandInfo;
+import org.smartscholars.projectmanager.commands.ICommand;
 
 public class CustomClassLoader extends ClassLoader {
     private static final Logger logger = LoggerFactory.getLogger(CustomClassLoader.class);
@@ -52,8 +55,16 @@ public class CustomClassLoader extends ClassLoader {
         }
     }
 
-    public void reloadClass(String name) throws ClassNotFoundException {
-        loadedClasses.remove(name);
-        loadClass(name, true);
+    public void reloadClass(String className) {
+        try {
+            // Use this instance to reload the class
+            Class<?> reloadedClass = this.loadClass(className, true); // true to indicate reloading
+            logger.info("Class reloaded: {}", reloadedClass.getName());
+
+            // Removed commandInstances logic. It should be handled elsewhere, not in the class loader.
+
+        } catch (ClassNotFoundException e) {
+            logger.error("Failed to reload class: {}", className, e);
+        }
     }
 }

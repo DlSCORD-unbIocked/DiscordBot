@@ -44,12 +44,14 @@ public class CommandManager extends ListenerAdapter {
     }
 
     public void reloadCommands(Guild guild) throws ClassNotFoundException {
-        customClassLoader.reloadClass("org.smartscholars.projectmanager.commands.misc.HelpCommand");
         logger.info("Reloading commands");
+
         commandClasses.clear();
         commandInstances.clear();
         customClassLoader = new CustomClassLoader(getClass().getClassLoader()); // Re-instantiate to clear cache
         loadCommandsFromConfiguration();
+
+        customClassLoader.reloadClass("org.smartscholars.projectmanager.commands.misc.HelpCommand");
 
         commandClasses.keySet().forEach(commandName -> {
             ICommand commandInstance = createCommandInstance(commandName);
@@ -60,8 +62,6 @@ public class CommandManager extends ListenerAdapter {
                 logger.error("Failed to create instance for command: {}", commandName);
             }
         });
-        logger.info(commandClasses.toString());
-        logger.info(commandInstances.toString());
         reloadGuildCommands(guild);
     }
 
@@ -243,5 +243,9 @@ public class CommandManager extends ListenerAdapter {
 
     public static JDA getJda() {
         return jda;
+    }
+
+    public CustomClassLoader getCustomClassLoader() {
+        return customClassLoader;
     }
 }
