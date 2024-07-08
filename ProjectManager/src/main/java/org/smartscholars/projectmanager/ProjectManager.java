@@ -1,25 +1,21 @@
 package org.smartscholars.projectmanager;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
 import org.smartscholars.projectmanager.eventlisteners.EventListenerManager;
 import org.smartscholars.projectmanager.eventlisteners.IEvent;
+import org.smartscholars.projectmanager.eventlisteners.ModalInteractionListener;
 import org.smartscholars.projectmanager.eventlisteners.OnReadyListener;
 
 import javax.security.auth.login.LoginException;
-import java.util.Arrays;
 import java.util.List;
+
 
 public class ProjectManager {
 
@@ -41,7 +37,8 @@ public class ProjectManager {
         shardManager.addEventListener(commandManager);
 
         List<IEvent> eventListeners = List.of(
-                new OnReadyListener(commandManager)
+                new OnReadyListener(commandManager),
+                new ModalInteractionListener()
         );
 
         logger.info("Registering event listeners.");
