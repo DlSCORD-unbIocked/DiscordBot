@@ -18,6 +18,7 @@ import org.smartscholars.projectmanager.eventlisteners.IEvent;
 import org.smartscholars.projectmanager.eventlisteners.OnReadyListener;
 
 import javax.security.auth.login.LoginException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,7 +28,11 @@ public class ProjectManager {
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
 
     public ProjectManager() throws LoginException {
-        Dotenv dotenv = Dotenv.load();
+        String envDirectory = resolveEnvFilePath();
+
+        Dotenv dotenv = Dotenv.configure()
+                              .directory(envDirectory) // Correctly set directory to DiscordBot
+                              .load();
         String botToken = dotenv.get("BOT_TOKEN");
         DefaultShardManagerBuilder builder = DefaultShardManagerBuilder.createDefault(botToken);
         builder.setActivity(Activity.playing("with your projects"));
@@ -61,5 +66,9 @@ public class ProjectManager {
         } catch (LoginException e) {
             System.out.println("Failed to login to Discord with the provided token.");
         }
+    }
+
+    private String resolveEnvFilePath() {
+        return Paths.get(System.getProperty("user.dir"), "..", "DiscordBot").normalize().toString();
     }
 }

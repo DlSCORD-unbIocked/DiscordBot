@@ -37,30 +37,51 @@ public class CommandManager extends ListenerAdapter {
     public CommandManager() {
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
-        Path configPath = Paths.get("ProjectManager/src/main/resources").toAbsolutePath();
-        FileWatcher watcher = new FileWatcher(configPath, this);
-        Thread watcherThread = new Thread(watcher);
-        watcherThread.start();
+//        Path configPath = Paths.get("ProjectManager/src/main/resources").toAbsolutePath();
+//        FileWatcher watcher = new FileWatcher(configPath, this);
+//        Thread watcherThread = new Thread(watcher);
+//        watcherThread.start();
     }
 
     public void reloadCommands(Guild guild) throws ClassNotFoundException {
         logger.info("Reloading commands in {}", guild.getName());
 
+        // Clear existing commands to remove outdated versions
         commandClasses.clear();
         commandInstances.clear();
+
+        // Recreate the CustomClassLoader to ensure it's fresh
         customClassLoader = new CustomClassLoader(getClass().getClassLoader());
+
+        // Load commands from configuration again
         loadCommandsFromConfiguration();
 
+        // Iterate over the loaded command classes
         commandClasses.keySet().forEach(commandName -> {
-            ICommand commandInstance = createCommandInstance(commandName);
-            if (commandInstance != null) {
-                logger.info("Created instance for command: {}", commandName);
-                commandInstances.put(commandName, commandInstance);
-            }
-            else {
-                logger.error("Failed to create instance for command: {}", commandName);
+            try {
+                // Use the updated customClassLoader to load the class
+                Class<?> clazz = customClassLoader.loadClass(commandClasses.get(commandName).getName(), true);
+
+                // Check if the class is an ICommand
+                if (ICommand.class.isAssignableFrom(clazz)) {
+                    @SuppressWarnings("unchecked")
+                    Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
+
+                    // Create a new instance of the command
+                    ICommand commandInstance = createCommandInstance(commandName);
+
+                    // Store the new instance in the commandInstances map
+                    if (commandInstance != null) {
+                        commandInstances.put(commandName, commandInstance);
+                        logger.info("Reloaded command instance for: {}", commandName);
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                logger.error("Failed to reload command class for: {}", commandName, e);
             }
         });
+
+        // Update the guild commands in Discord to reflect the changes
         reloadGuildCommands(guild);
     }
 
