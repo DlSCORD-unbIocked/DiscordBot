@@ -8,10 +8,7 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
-import org.smartscholars.projectmanager.eventlisteners.EventListenerManager;
-import org.smartscholars.projectmanager.eventlisteners.IEvent;
-import org.smartscholars.projectmanager.eventlisteners.ModalInteractionListener;
-import org.smartscholars.projectmanager.eventlisteners.OnReadyListener;
+import org.smartscholars.projectmanager.eventlisteners.*;
 
 import javax.security.auth.login.LoginException;
 import java.util.List;
@@ -38,7 +35,8 @@ public class ProjectManager {
 
         List<IEvent> eventListeners = List.of(
                 new OnReadyListener(commandManager),
-                new ModalInteractionListener()
+                new ModalInteractionListener(),
+                new ActivityReactionListener()
         );
 
         logger.info("Registering event listeners.");
