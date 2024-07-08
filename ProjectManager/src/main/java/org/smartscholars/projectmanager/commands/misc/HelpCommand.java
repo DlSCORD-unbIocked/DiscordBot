@@ -44,7 +44,7 @@ public class HelpCommand implements ICommand {
             EmbedBuilder embed = buildPageEmbed(categoryRequested, pages.get(pageRequested - 1), pageRequested, pages.size());
             event.replyEmbeds(embed.build()).queue();
             logger.info("test");
-            logger.info("test");
+//            logger.info("test");
         }
         else {
             event.reply("Category not found or no category specified. Please specify a valid category.").setEphemeral(true).queue();

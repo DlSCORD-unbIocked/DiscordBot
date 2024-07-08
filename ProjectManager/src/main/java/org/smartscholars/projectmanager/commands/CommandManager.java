@@ -44,18 +44,17 @@ public class CommandManager extends ListenerAdapter {
     }
 
     public void reloadCommands(Guild guild) throws ClassNotFoundException {
-        logger.info("Reloading commands");
+        logger.info("Reloading commands in {}", guild.getName());
 
         commandClasses.clear();
         commandInstances.clear();
-        customClassLoader = new CustomClassLoader(getClass().getClassLoader()); // Re-instantiate to clear cache
+        customClassLoader = new CustomClassLoader(getClass().getClassLoader());
         loadCommandsFromConfiguration();
-
-        customClassLoader.reloadClass("org.smartscholars.projectmanager.commands.misc.HelpCommand");
 
         commandClasses.keySet().forEach(commandName -> {
             ICommand commandInstance = createCommandInstance(commandName);
             if (commandInstance != null) {
+                logger.info("Created instance for command: {}", commandName);
                 commandInstances.put(commandName, commandInstance);
             }
             else {
@@ -82,13 +81,10 @@ public class CommandManager extends ListenerAdapter {
         try {
             CustomClassLoader customClassLoader = new CustomClassLoader(getClass().getClassLoader());
             Class<?> clazz = customClassLoader.loadClass(className, true);
-
-            // Log the class and all interfaces it implements
             logger.info("Loaded class: {}", clazz.getName());
             Class<?>[] interfaces = clazz.getInterfaces();
             for (Class<?> iface : interfaces) {
                 logger.info("Class {} implements interface: {}", clazz.getName(), iface.getName());
-                // Check and log if this interface is ICommand or not
                 if (ICommand.class.equals(iface)) {
                     logger.info("Interface {} is ICommand.", iface.getName());
                 }
