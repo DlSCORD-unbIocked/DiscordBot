@@ -16,12 +16,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @CommandInfo(name = "reload", description = "Reloads the commands", permissions = {Permission.ADMINISTRATOR})
 public class ReloadCommand implements ICommand {
 
     private final CommandManager commandManager;
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(ReloadCommand.class);
+    private Process currentProcess = null;
 
     public ReloadCommand(CommandManager commandManager) {
         this.commandManager = commandManager;
@@ -32,58 +34,43 @@ public class ReloadCommand implements ICommand {
         if (!Objects.requireNonNull(event.getGuild()).getId().equals("1086425022245118033")) {
             return;
         }
-        // Acknowledge the interaction immediately
         event.deferReply().queue();
 
         new Thread(() -> {
             StringBuilder responseBuilder = new StringBuilder();
             try {
-                String mavenPath = "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2024.1.4\\plugins\\maven\\lib\\maven3\\bin\\mvn.cmd";
-                String pomPath = System.getProperty("user.dir") + "\\ProjectManager\\pom.xml";
-                String projectDirectory = System.getProperty("user.dir") + "\\ProjectManager";
-                ProcessBuilder builder = new ProcessBuilder(mavenPath, "-f", pomPath, "compile");
-                builder.redirectErrorStream(true);
-                Process process = builder.start();
+                // Assuming terminateExistingProcess() and getProcess() are defined elsewhere
+                terminateExistingProcess(); // Terminate any existing process
 
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                // Define the command and arguments for the new process
+                List<String> command = List.of("java", "-jar", "path/to/your/application.jar");
+
+                // Create a new ProcessBuilder
+                ProcessBuilder builder = new ProcessBuilder(command);
+                builder.redirectErrorStream(true); // Redirect error stream to standard output
+
+                // Start the new process
+                Process newProcess = builder.start();
+                currentProcess = newProcess; // Store the new process reference for management
+
+                // Optionally, read the output of the new process
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(newProcess.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        logger.info(line); // Log Maven output for debugging
+                        System.out.println(line); // Or log the line
                     }
                 }
 
-                int exitCode = process.waitFor();
-                if (exitCode == 0) {
-                    responseBuilder.append("Maven compilation successful.\n");
-                }
-                else {
-                    responseBuilder.append("Maven compilation failed.\n");
-                }
+                // Note: We do not call newProcess.waitFor() here to allow the original process to end independently
 
-                if (exitCode == 0) {
-                    Process processRun = getProcess(mavenPath, projectDirectory);
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(processRun.getInputStream()))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            System.out.println(line); // Optionally log the output
-                        }
-                    }
-                    int exitCodeRun = processRun.waitFor();
-                    if (exitCodeRun == 0) {
-                        responseBuilder.append("Project run successfully.\n");
-                    } else {
-                        responseBuilder.append("Project run failed.\n");
-                    }
-                }
-
+                // Respond to the event
+                responseBuilder.append("New process started.");
                 if (event.isAcknowledged()) {
                     event.getHook().editOriginal(responseBuilder.toString()).queue();
-                }
-                else {
+                } else {
                     event.reply(responseBuilder.toString()).setEphemeral(true).queue();
                 }
-            }
-            catch (IOException | InterruptedException e) {
+            } catch (IOException e) {
                 Thread.currentThread().interrupt();
                 logger.error("An error occurred: ", e);
             }
@@ -91,7 +78,7 @@ public class ReloadCommand implements ICommand {
     }
 
     private static @NotNull Process getProcess(String mavenPath, String projectDirectory) throws IOException {
-        Path envPath = Paths.get(System.getProperty("user.dir"), ".env");
+        Path envPath = Paths.get(System.getProperty("user.dir"), ".", ".env").normalize();
         List<String> lines = Files.readAllLines(envPath);
         Map<String, String> env = new HashMap<>();
         for (String line : lines) {
@@ -107,5 +94,33 @@ public class ReloadCommand implements ICommand {
         Map<String, String> processEnvironment = builderRun.environment();
         processEnvironment.putAll(env); // Set environment variables for the process
         return builderRun.start();
+    }
+
+    public void terminateExistingProcess() {
+        try {
+            // Command to find the process ID (PID) of the running application
+            List<String> findProcessCommand = List.of("cmd", "/c", "tasklist | findstr java.exe");
+            ProcessBuilder findProcessBuilder = new ProcessBuilder(findProcessCommand);
+            Process findProcess = findProcessBuilder.start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(findProcess.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // Extract the PID from the command output
+                String[] parts = line.split("\\s+");
+                String pid = parts[1]; // Assuming the PID is in the second column
+
+                // Command to kill the process using its PID
+                List<String> killCommand = List.of("cmd", "/c", "taskkill /F /PID " + pid);
+                ProcessBuilder killProcessBuilder = new ProcessBuilder(killCommand);
+                Process killProcess = killProcessBuilder.start();
+                killProcess.waitFor(); // Wait for the kill command to complete
+                System.out.println("Terminated process with PID: " + pid);
+            }
+            reader.close();
+        } catch (IOException | InterruptedException e) {
+            logger.error("Failed to terminate existing process.", e);
+            Thread.currentThread().interrupt(); // Restore the interrupted status
+        }
     }
 }

@@ -28,11 +28,10 @@ public class ProjectManager {
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
 
     public ProjectManager() throws LoginException {
-        String envDirectory = resolveEnvFilePath();
 
         Dotenv dotenv = Dotenv.configure()
-                              .directory(envDirectory) // Correctly set directory to DiscordBot
-                              .load();
+                      .directory("C:\\Users\\paulc\\OneDrive\\Documents\\Custom Office Templates\\Desktop\\DiscordBot")
+                      .load();
         String botToken = dotenv.get("BOT_TOKEN");
         DefaultShardManagerBuilder builder = DefaultShardManagerBuilder.createDefault(botToken);
         builder.setActivity(Activity.playing("with your projects"));
