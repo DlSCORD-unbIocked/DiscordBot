@@ -2,6 +2,7 @@ package org.smartscholars.projectmanager.eventlisteners;
 
 
 import net.dv8tion.jda.api.EmbedBuilder;
+
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
@@ -10,6 +11,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
+
+
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
@@ -29,15 +32,17 @@ import org.smartscholars.projectmanager.commands.misc.ImageOptionsCommand;
 import org.slf4j.Logger;
 
 import java.awt.*;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 
+
+
 public class OnReadyListener extends ListenerAdapter implements IEvent {
     private final CommandManager commandManager;
-    private Message starredMessages;
 
     public OnReadyListener(CommandManager commandManager) {
         this.commandManager = commandManager;
@@ -85,6 +90,7 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
     {
         String emojicode = event.getReaction().getEmoji().getAsReactionCode();
         String messageid = event.getMessageId();
+
         Guild guild = event.getGuild();
         MessageChannelUnion channel = event.getChannel();
 //        TextChannel name = guild.getTextChannelById("1259897391214231583");
@@ -99,6 +105,13 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
             channel.sendMessage("You clicked the star button, the redirect to the message is https://discord.com/channels/" + guild.getId() + "/" + channel.getId() + "/" +  messageid).queue();
 
 //            channel.editMessageEmbedsById(messageid, new EmbedBuilder().setTitle("Star Leaderboard").setColor(Color.RED).build()).queue();
+
+        String guildid = event.getGuild().getId();
+        String channelid = event.getChannel().getId();
+        if(emojicode.equals("⭐"))
+        {
+            event.getChannel().sendMessage("You clicked the star button, the redirect to the message is https://discord.com/channels/" + guildid + "/" + channelid + "/" +  messageid).queue();
+
         }
     }
 
@@ -109,12 +122,12 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
         String messageid = event.getMessageId();
         String guildid = event.getGuild().getId();
         String channelid = event.getChannel().getId();
-
         if(emojicode.equals("⭐"))
         {
             event.getChannel().sendMessage("You removed the star button, the redirect to the message is https://discord.com/channels/" + guildid + "/" + channelid + "/" +  messageid).queue();
         }
     }
+
 
     public void changeStars(String messageId, int change) {
 //        guild.getTextChannelById("1259897391214231583").retrieveMessageById("1259903701271974002").queue((m -> {}));
@@ -157,4 +170,5 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
             updateStars(starboard, guild);
         }));
     }
+
 }
