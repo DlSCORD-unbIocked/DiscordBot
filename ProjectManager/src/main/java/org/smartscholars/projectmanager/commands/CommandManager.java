@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.administrator.ReloadCommand;
+import org.smartscholars.projectmanager.util.CustomClassLoader;
 import org.smartscholars.projectmanager.util.FileWatcher;
 
 import java.io.BufferedReader;
@@ -30,8 +31,6 @@ public class CommandManager extends ListenerAdapter {
     private final HashMap<String, ICommand> commandInstances = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
     private static JDA jda;
-
-    private static final Map<String, Long> commandInstanceCreationTimes = new HashMap<>();
 
     public CommandManager() {
         logger.info("Initializing CommandManager");
@@ -55,7 +54,8 @@ public class CommandManager extends ListenerAdapter {
             ICommand commandInstance = createCommandInstance(commandName);
             if (commandInstance != null) {
                 commandInstances.put(commandName, commandInstance);
-            } else {
+            }
+            else {
                 logger.error("Failed to create instance for command: {}", commandName);
             }
         });
@@ -78,34 +78,32 @@ public class CommandManager extends ListenerAdapter {
     }
 
     private void loadAndRegisterCommand(String className) {
-        try {
-            Class<?> clazz = Class.forName(className);
-            if (ICommand.class.isAssignableFrom(clazz)) {
-                @SuppressWarnings("unchecked")
-                Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
-                if (commandClass.isAnnotationPresent(CommandInfo.class)) {
-                    CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
-                    logger.info("Loading command: {}", info.name());
-                    commandClasses.put(info.name(), commandClass);
-                }
-                else {
-                    logger.error("Command class does not have CommandInfo annotation: {}", className);
-                }
+    try {
+        CustomClassLoader customClassLoader = new CustomClassLoader(getClass().getClassLoader());
+        Class<?> clazz = customClassLoader.loadClass(className, true);
+        if (ICommand.class.isAssignableFrom(clazz)) {
+            @SuppressWarnings("unchecked")
+            Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
+            if (commandClass.isAnnotationPresent(CommandInfo.class)) {
+                CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
+                logger.info("Loading command: {}", info.name());
+                commandClasses.put(info.name(), commandClass);
             }
             else {
-                logger.error("Class does not implement ICommand interface: {}", className);
+                logger.error("Command class does not have CommandInfo annotation: {}", className);
             }
         }
-        catch (ClassNotFoundException e) {
-            logger.error("Class not found for command: {}", className, e);
-        }
-        catch (ClassCastException e) {
-            logger.error("Class cannot be cast to ICommand: {}", className, e);
-        }
-        catch (Exception e) {
-            logger.error("Unexpected error while loading command: {}", className, e);
+        else {
+            logger.error("Class does not implement ICommand interface: {}", className);
         }
     }
+    catch (ClassNotFoundException e) {
+        logger.error("Class not found for command: {}", className, e);
+    }
+    catch (Exception e) {
+        logger.error("Unexpected error while loading command: {}", className, e);
+    }
+}
 
     public void registerCommands(Object target) {
         //create something to reset commands (do later)
@@ -209,16 +207,11 @@ public class CommandManager extends ListenerAdapter {
             } else {
                 instance = commandClass.getDeclaredConstructor().newInstance();
             }
-            updateCommandInstanceCreationTime(commandName); // Update the creation time
             return instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.error("Failed to instantiate command: {}", commandName, e);
             return null;
         }
-    }
-
-    public static void updateCommandInstanceCreationTime(String commandName) {
-        commandInstanceCreationTimes.put(commandName, System.currentTimeMillis());
     }
 
     private boolean hasPermission(Member member, Permission permission) {
