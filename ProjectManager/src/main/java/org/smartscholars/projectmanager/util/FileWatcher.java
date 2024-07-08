@@ -54,6 +54,8 @@ public class FileWatcher implements Runnable {
         catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.error("Error while watching file", e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 }

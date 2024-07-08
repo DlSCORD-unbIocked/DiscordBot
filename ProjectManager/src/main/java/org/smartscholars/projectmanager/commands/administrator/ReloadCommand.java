@@ -21,7 +21,7 @@ public class ReloadCommand implements ICommand {
 
     //testing command to register commands without having to rerun the bot
     @Override
-    public void execute(SlashCommandInteractionEvent event) {
+    public void execute(SlashCommandInteractionEvent event) throws ClassNotFoundException {
         //Only register commands in dev server for testing
         logger.info(Objects.requireNonNull(event.getGuild()).getId());
         if (Objects.requireNonNull(event.getGuild()).getId().equals("1086425022245118033")) {

@@ -32,6 +32,8 @@ public class CommandManager extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
     private static JDA jda;
 
+    private CustomClassLoader customClassLoader = new CustomClassLoader(getClass().getClassLoader());
+
     public CommandManager() {
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
@@ -41,13 +43,12 @@ public class CommandManager extends ListenerAdapter {
         watcherThread.start();
     }
 
-    public void reloadCommands(Guild guild) {
+    public void reloadCommands(Guild guild) throws ClassNotFoundException {
+        customClassLoader.reloadClass("org.smartscholars.projectmanager.commands.misc.HelpCommand");
         logger.info("Reloading commands");
-        logger.info(commandClasses.toString());
-        logger.info(commandInstances.toString());
         commandClasses.clear();
         commandInstances.clear();
-
+        customClassLoader = new CustomClassLoader(getClass().getClassLoader()); // Re-instantiate to clear cache
         loadCommandsFromConfiguration();
 
         commandClasses.keySet().forEach(commandName -> {
@@ -78,32 +79,42 @@ public class CommandManager extends ListenerAdapter {
     }
 
     private void loadAndRegisterCommand(String className) {
-    try {
-        CustomClassLoader customClassLoader = new CustomClassLoader(getClass().getClassLoader());
-        Class<?> clazz = customClassLoader.loadClass(className, true);
-        if (ICommand.class.isAssignableFrom(clazz)) {
-            @SuppressWarnings("unchecked")
-            Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
-            if (commandClass.isAnnotationPresent(CommandInfo.class)) {
-                CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
-                logger.info("Loading command: {}", info.name());
-                commandClasses.put(info.name(), commandClass);
+        try {
+            CustomClassLoader customClassLoader = new CustomClassLoader(getClass().getClassLoader());
+            Class<?> clazz = customClassLoader.loadClass(className, true);
+
+            // Log the class and all interfaces it implements
+            logger.info("Loaded class: {}", clazz.getName());
+            Class<?>[] interfaces = clazz.getInterfaces();
+            for (Class<?> iface : interfaces) {
+                logger.info("Class {} implements interface: {}", clazz.getName(), iface.getName());
+                // Check and log if this interface is ICommand or not
+                if (ICommand.class.equals(iface)) {
+                    logger.info("Interface {} is ICommand.", iface.getName());
+                }
+                else {
+                    logger.info("Interface {} is not ICommand.", iface.getName());
+                }
             }
-            else {
-                logger.error("Command class does not have CommandInfo annotation: {}", className);
+
+            if (ICommand.class.isAssignableFrom(clazz)) {
+                @SuppressWarnings("unchecked")
+                Class<? extends ICommand> commandClass = (Class<? extends ICommand>) clazz;
+                if (commandClass.isAnnotationPresent(CommandInfo.class)) {
+                    CommandInfo info = commandClass.getAnnotation(CommandInfo.class);
+                    logger.info("Loading command: {}", info.name());
+                    commandClasses.put(info.name(), commandClass);
+                } else {
+                    logger.error("Command class does not have CommandInfo annotation: {}", className);
+                }
+            } else {
+                logger.error("Class does not implement ICommand interface: {}", className);
             }
         }
-        else {
-            logger.error("Class does not implement ICommand interface: {}", className);
+        catch (NoClassDefFoundError | Exception e) {
+            logger.error("Error loading command: {}", className, e);
         }
     }
-    catch (ClassNotFoundException e) {
-        logger.error("Class not found for command: {}", className, e);
-    }
-    catch (Exception e) {
-        logger.error("Unexpected error while loading command: {}", className, e);
-    }
-}
 
     public void registerCommands(Object target) {
         //create something to reset commands (do later)
