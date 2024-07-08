@@ -33,7 +33,14 @@ public class HelpCommand implements ICommand {
 
         Map<String, List<String>> categorizedCommands = organizeCommandsByCategory();
 
-        if (categoryRequested != null && categorizedCommands.containsKey(categoryRequested)) {
+        if(categoryRequested == null){
+            EmbedBuilder embed = new EmbedBuilder();
+            embed.setTitle("Help - Command Categories");
+            embed.setColor(new Color(0x1F8B4C));
+            categorizedCommands.forEach((command, lst) -> embed.addField("", command + ":" + lst.size() + " command(s)", false));
+            event.replyEmbeds(embed.build()).queue();
+        }
+        else if (categorizedCommands.containsKey(categoryRequested)) {
             List<String> commands = categorizedCommands.get(categoryRequested);
             int COMMANDS_PER_PAGE = 5;
             List<List<String>> pages = paginateCommands(commands, COMMANDS_PER_PAGE);
@@ -59,11 +66,11 @@ public class HelpCommand implements ICommand {
         return categorizedCommands;
     }
 
-    private java.util.List<java.util.List<String>> paginateCommands(java.util.List<String> commands, int pageSize) {
+    private static java.util.List<java.util.List<String>> paginateCommands(java.util.List<String> commands, int pageSize) {
         return new ArrayList<>(ListUtils.partition(commands, pageSize));
     }
 
-    private EmbedBuilder buildPageEmbed(String category, List<String> commandsOnPage, int currentPage, int totalPages) {
+    private static EmbedBuilder buildPageEmbed(String category, List<String> commandsOnPage, int currentPage, int totalPages) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("Help - " + category + " Commands");
         embed.setDescription("Page " + currentPage + " of " + totalPages);
@@ -71,4 +78,6 @@ public class HelpCommand implements ICommand {
         commandsOnPage.forEach(command -> embed.addField("", command, false));
         return embed;
     }
+
+
 }
