@@ -1,6 +1,11 @@
 package org.smartscholars.projectmanager.eventlisteners;
 
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageReaction;
@@ -14,6 +19,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.lang.reflect.Type;
 import java.util.*;
 
 
@@ -37,7 +45,7 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
         Guild guild = event.getGuild();
         MessageChannelUnion channel = event.getChannel();
 //        TextChannel name = guild.getTextChannelById("1259897391214231583");
-//        channel.editMessageById("1259903701271974002", ",").queue();
+        channel.editMessageById("1259903701271974002", ",").queue();
 
         if(emojicode.equals("⭐"))
         {
@@ -81,16 +89,32 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
             embed.setColor(Color.BLUE);
             Set<String> keys = starboard.keySet();
 
-            String[] starredMessages = keys.toArray(new String[keys.size()]);
-            for(String mess : starredMessages)
+            // in progress
+            String filePath = "ProjectManager/src/main/resources/activities.json";
+            FileReader reader = null;
+            try {
+                reader = new FileReader(filePath);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            Type type = new TypeToken<JsonObject>() {}.getType();
+            JsonObject jsonObject = new Gson().fromJson(reader, type);
+            JsonArray starredMessages = jsonObject.getAsJsonArray("leaderboard");
+            //
+
+            for(JsonElement msg : starredMessages)
             {
+
+                String mess = msg.getAsString();
                 String channelid = mess.split("/")[0];
                 String messageid = mess.split("/")[1];
+                String stars = "temp";
                 guild.getTextChannelById(channelid).retrieveMessageById(messageid).queue((m -> {
-                    embed.addField("Stars: " + starboard.get(starredMessages[0]), "Author: "+ m.getAuthor().getName() +"\nMessage: " + m.getContentDisplay() + "\nOriginal: https://discord.com/channels/" + guild.getId()+"/"+channelid+"/"+messageid, false);
+                    embed.addField("Stars: " + stars, "Author: "+ m.getAuthor().getName() +"\nMessage: " + m.getContentDisplay() + "\nOriginal: https://discord.com/channels/" + guild.getId()+"/"+channelid+"/"+messageid, false);
 
                     message.editMessageEmbeds(embed.build()).queue();
                 }));
+
 
             }
 
