@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
@@ -48,7 +49,8 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
     }
 
     public void onGuildJoin(@NotNull GuildJoinEvent event) {
-        event.getGuild().createCategory("STARBOARD").queue((category) -> category.createTextChannel("starboard").queue());
+        Guild guild = event.getGuild();
+        guild.createCategory("STARBOARD").queue((category) -> category.createTextChannel("starboard").queue());
 
         String filePath = "ProjectManager/src/main/resources/starboard.json";
         FileReader reader;
@@ -58,6 +60,8 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
         catch (FileNotFoundException e) {
             JsonObject jsonObject = new JsonObject();
 
+            jsonObject.addProperty("starboardPath", guild.getCategoriesByName("STARBOARD", true).get(0).getId() + "/" + guild.getTextChannelsByName("starboard", true).get(0).getId());
+            jsonObject.addProperty("leaderboard", ",");
             Gson gson = new Gson();
             String json = gson.toJson(jsonObject);
             FileWriter writer;
@@ -68,19 +72,14 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
             }
             try {
                 writer.write(json);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-            try {
                 writer.close();
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
             throw new RuntimeException(e);
         }
-        Type type = new TypeToken<JsonObject>() {}.getType();
-        JsonObject jsonObject = new Gson().fromJson(reader, type);
-        JsonArray starboardArray = jsonObject.getAsJsonArray("starboard");
+
+
     }
 
 }
