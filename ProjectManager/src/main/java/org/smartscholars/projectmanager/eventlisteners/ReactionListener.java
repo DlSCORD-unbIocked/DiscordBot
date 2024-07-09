@@ -14,14 +14,11 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 
 public class ReactionListener extends ListenerAdapter implements IEvent {
-
+    public EmbedBuilder embed;
     @Override
     public void execute(GenericEvent event) {
 
@@ -44,20 +41,13 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
 
         if(emojicode.equals("⭐"))
         {
-
-            event.retrieveMessage().queue((message -> {
-                for(MessageReaction r : message.getReactions())
-                {System.out.println("Starred message: " + r.getCount());}
-            }));
             String channelUrl = channel.getId() + "/" +  messageid;
-//            channel.sendMessage("You clicked the star button, the redirect to the message is https://discord.com/channels/" + channelUrl).queue();
             channel.retrieveMessageById("1259903701271974002").queue((message -> {
                 String content = message.getContentDisplay();
                 content +=  channelUrl + ",";
                 message.editMessage(content).queue();
             }));
             getStarredComments(guild);
-//            channel.editMessageEmbedsById(messageid, new EmbedBuilder().setTitle("Star Leaderboard").setColor(Color.RED).build()).queue();
         }
     }
 
@@ -78,31 +68,32 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
                 content = content.replace(channelUrl + ",", "");
                 message.editMessage(content).queue();
             }));
-//            event.getChannel().sendMessage("You removed the star button, the redirect to the message is https://discord.com/channels/" + guildid + "/" + channelid + "/" +  messageid).queue();
+            getStarredComments(guild);
         }
     }
 
-    public void changeStars(String messageId, int change) {
-//        guild.getTextChannelById("1259897391214231583").retrieveMessageById("1259903701271974002").queue((m -> {}));
-    }
+
     public void updateStars(HashMap<String, Integer> starboard, Guild guild)
     {
         guild.getTextChannelById("1259869260927340614").retrieveMessageById("1259903444920176690").queue((message -> {
-            EmbedBuilder embed = new EmbedBuilder();
+            embed = new EmbedBuilder();
             embed.setTitle("Star Leaderboard");
-            embed.setColor(Color.RED);
-            Iterator<String> starredMessages = starboard.keySet().iterator();
-            //almost working
-//            guild.getTextChannelById(starredMessages.next().split("/")[1]).retrieveMessageById(starredMessages[0].split("/")[2]).queue((m -> {
-//                embed.addField("Stars: " + starboard.get(starredMessages[0]), "Author: "+ m.getAuthor().getName() +"\nMessage: " + m.getContentDisplay(), false);
-//            }));
-//            for(Map.Entry<String, String> entry : starboard.descendingMap().entrySet()) {
-//                String val = entry.getValue();
-//                System.out.println(val);
-//                embed.addField("Stars: " + entry.getKey(), "Author: "+ val.split("\\.")[0] +"\nMessage: " + val.split("\\.")[1], false);
-//            }
+            embed.setColor(Color.BLUE);
+            Set<String> keys = starboard.keySet();
 
-            message.editMessageEmbeds(embed.build()).queue();
+            String[] starredMessages = keys.toArray(new String[keys.size()]);
+            for(String mess : starredMessages)
+            {
+                String channelid = mess.split("/")[0];
+                String messageid = mess.split("/")[1];
+                guild.getTextChannelById(channelid).retrieveMessageById(messageid).queue((m -> {
+                    embed.addField("Stars: " + starboard.get(starredMessages[0]), "Author: "+ m.getAuthor().getName() +"\nMessage: " + m.getContentDisplay() + "\nOriginal: https://discord.com/channels/" + guild.getId()+"/"+channelid+"/"+messageid, false);
+
+                    message.editMessageEmbeds(embed.build()).queue();
+                }));
+
+            }
+
         }));
     }
     public void getStarredComments(Guild guild)
@@ -116,8 +107,11 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
 
             HashMap<String, Integer> starboard = new HashMap<>();
             for (String element : parts) {
-                starboard.put(element, starboard.getOrDefault(element, 0) + 1);
+                if(!element.equals("")) {
+                    starboard.put(element, starboard.getOrDefault(element, 0) + 1);
+                }
             }
+
             updateStars(starboard, guild);
         }));
     }
