@@ -1,9 +1,6 @@
 package org.smartscholars.projectmanager.eventlisteners;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -13,11 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.util.DateTimeConverter;
 
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Objects;
 
-public class ModalInteractionListener extends ListenerAdapter implements IEvent{
+public class ModalInteractionListener extends ListenerAdapter implements IEvent {
 
     private final Logger logger = LoggerFactory.getLogger(ModalInteractionListener.class);
 
@@ -36,29 +34,42 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent{
             event.reply("@everyone react to do " + activity + " on " + date + " at " + time).queue(interactionHook -> {
                 interactionHook.retrieveOriginal().queue(message -> {
                     message.addReaction(Emoji.fromUnicode("U+1F44D")).queue();
-                    JsonObject json = new JsonObject();
+                    String filePath = "ProjectManager/src/main/resources/activities.json";
+
+                    JsonElement fileElement;
+                    try (FileReader reader = new FileReader(filePath)) {
+                        fileElement = JsonParser.parseReader(reader);
+                    } catch (IOException e) {
+                        fileElement = new JsonObject(); // Create a new JSON object if an error occurs
+                        logger.error("Error reading from file", e);
+                    }
+
+                    JsonObject rootObject = fileElement.isJsonObject() ? fileElement.getAsJsonObject() : new JsonObject();
+                    JsonArray activitiesArray = rootObject.has("activities") ? rootObject.getAsJsonArray("activities") : new JsonArray();
+
+                    // Create new activity JSON object
+                    JsonObject newActivity = new JsonObject();
                     JsonArray usersArray = new JsonArray();
                     usersArray.add(userId);
-                    json.addProperty("messageId", message.getId());
-                    json.addProperty("activity", activity);
-                    json.addProperty("date", DateTimeConverter.parseDate(date));
-                    json.addProperty("time", DateTimeConverter.parseTime(time));
-                    json.addProperty("users", usersArray.toString());
+                    newActivity.addProperty("messageId", message.getId());
+                    newActivity.addProperty("activity", activity);
+                    newActivity.addProperty("date", DateTimeConverter.parseDate(date));
+                    newActivity.addProperty("time", DateTimeConverter.parseTime(time));
+                    newActivity.add("users", usersArray);
 
-                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                    String prettyJsonString = gson.toJson(json);
+                    activitiesArray.add(newActivity);
+                    rootObject.add("activities", activitiesArray);
 
-                    String filePath = "ProjectManager/src/main/resources/activities.json";
                     try (FileWriter file = new FileWriter(filePath)) {
-                        file.write(prettyJsonString);
+                        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                        file.write(gson.toJson(rootObject));
                         file.flush();
-                    }
-                    catch (IOException e) {
-                        logger.error("Error writing message ID to file", e);
+                    } catch (IOException e) {
+                        logger.error("Error writing to file", e);
+                        interactionHook.editOriginal("Error please try again").queue();
                     }
                 });
             });
         }
     }
 }
-
