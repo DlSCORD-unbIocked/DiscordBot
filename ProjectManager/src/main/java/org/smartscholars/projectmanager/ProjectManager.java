@@ -32,7 +32,7 @@ public class ProjectManager {
         shardManager.addEventListener(commandManager);
         List<IEvent> eventListeners = List.of(
                 new OnReadyListener(commandManager),
-                new ModalInteractionListener(),
+                new ModalInteractionListener(schedulerService),
                 new ButtonListener(),
                 new ReactionListener(),
                 new ActivityReactionListener()

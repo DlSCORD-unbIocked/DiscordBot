@@ -32,12 +32,12 @@ public class ActivityCommand extends ListenerAdapter implements ICommand{
         String activity = Objects.requireNonNull(event.getOption("activity")).getAsString();
 
         TextInput dateInput = TextInput.create("date", "What date for " + activity + "?", TextInputStyle.SHORT)
-                                       .setPlaceholder("MM/DD/YYYY")
+                                       .setPlaceholder("MM/dd/yyyy")
                                        .setRequiredRange(10, 10)
                                        .build();
 
         TextInput timeInput = TextInput.create("time", "What time for (military time) " + activity + "?", TextInputStyle.SHORT)
-                                       .setPlaceholder("HH:MM")
+                                       .setPlaceholder("HH:mm")
                                        .setRequiredRange(5, 5)
                                        .build();
 

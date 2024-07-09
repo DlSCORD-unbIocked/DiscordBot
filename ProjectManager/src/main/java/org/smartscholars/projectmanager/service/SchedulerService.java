@@ -15,12 +15,12 @@ public class SchedulerService {
         this.jda = jda;
     }
 
-    public void scheduleAnnouncement(String channelId, String message, long scheduledTimeMillis) {
+    public void scheduleAnnouncement(String channelId, String message, String messageId, long scheduledTimeMillis) {
         long delay = scheduledTimeMillis - System.currentTimeMillis();
-        scheduler.schedule(() -> sendAnnouncement(channelId, message), delay, TimeUnit.MILLISECONDS);
+        scheduler.schedule(() -> sendAnnouncement(channelId, message, messageId), delay, TimeUnit.MILLISECONDS);
     }
 
-    private void sendAnnouncement(String channelId, String message) {
+    private void sendAnnouncement(String channelId, String message, String messageId) {
         TextChannel channel = jda.getTextChannelById(channelId);
         if (channel != null) {
             channel.sendMessage(message).queue();

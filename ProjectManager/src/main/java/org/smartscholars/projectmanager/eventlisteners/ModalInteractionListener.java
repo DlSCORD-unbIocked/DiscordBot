@@ -8,16 +8,23 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartscholars.projectmanager.service.SchedulerService;
 import org.smartscholars.projectmanager.util.DateTimeConverter;
 
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ModalInteractionListener extends ListenerAdapter implements IEvent {
 
     private final Logger logger = LoggerFactory.getLogger(ModalInteractionListener.class);
+    private final SchedulerService schedulerService;
+
+    public ModalInteractionListener(SchedulerService schedulerService) {
+        this.schedulerService = schedulerService;
+    }
 
     @Override
     public void execute(GenericEvent event) {
@@ -29,8 +36,8 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
         String userId = event.getUser().getId();
         if (parts[0].equals("activityDateModal") && parts.length > 1) {
             String activity = parts[1];
-            String date = Objects.requireNonNull(event.getValue("date")).getAsString();
-            String time = Objects.requireNonNull(event.getValue("time")).getAsString();
+            AtomicReference<String> date = new AtomicReference<>(Objects.requireNonNull(event.getValue("date")).getAsString());
+            AtomicReference<String> time = new AtomicReference<>(Objects.requireNonNull(event.getValue("time")).getAsString());
             event.reply("@everyone react to do " + activity + " on " + date + " at " + time).queue(interactionHook -> {
                 interactionHook.retrieveOriginal().queue(message -> {
                     message.addReaction(Emoji.fromUnicode("U+1F44D")).queue();
@@ -41,21 +48,22 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
                         fileElement = JsonParser.parseReader(reader);
                     }
                     catch (IOException e) {
-                        fileElement = new JsonObject(); // Create a new JSON object if an error occurs
+                        fileElement = new JsonObject();
                         logger.error("Error reading from file", e);
                     }
 
                     JsonObject rootObject = fileElement.isJsonObject() ? fileElement.getAsJsonObject() : new JsonObject();
                     JsonArray activitiesArray = rootObject.has("activities") ? rootObject.getAsJsonArray("activities") : new JsonArray();
-
+                    date.set(DateTimeConverter.parseDate(date.get()));
+                    time.set(DateTimeConverter.parseTime(time.get()));
                     // Create new activity JSON object
                     JsonObject newActivity = new JsonObject();
                     JsonArray usersArray = new JsonArray();
                     usersArray.add(userId);
                     newActivity.addProperty("messageId", message.getId());
                     newActivity.addProperty("activity", activity);
-                    newActivity.addProperty("date", DateTimeConverter.parseDate(date));
-                    newActivity.addProperty("time", DateTimeConverter.parseTime(time));
+                    newActivity.addProperty("date", date.get());
+                    newActivity.addProperty("time", time.get());
                     newActivity.add("users", usersArray);
 
                     activitiesArray.add(newActivity);
@@ -65,6 +73,10 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
                         file.write(gson.toJson(rootObject));
                         file.flush();
+                        //initiate scheduler
+                        String pattern = "yyyy-MM-dd HH:mm";
+                        long timeInMillis = DateTimeConverter.convertToMillis(date.get() + " " + time.get(), pattern);
+                        schedulerService.scheduleAnnouncement("1086834972876345495", "Pull up for " + activity + " now!", message.getId(), timeInMillis);
                     }
                     catch (IOException e) {
                         logger.error("Error writing to file", e);

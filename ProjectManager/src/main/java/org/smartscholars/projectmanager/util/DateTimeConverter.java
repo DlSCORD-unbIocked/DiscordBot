@@ -1,7 +1,6 @@
 package org.smartscholars.projectmanager.util;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 public class DateTimeConverter {
@@ -10,6 +9,7 @@ public class DateTimeConverter {
         LocalDate customParsedDate = LocalDate.parse(date, formatter);
         return customParsedDate.toString();
     }
+
     public static String parseTime(String time) {
         try {
             LocalTime parsedTime = LocalTime.parse(time);
@@ -25,6 +25,13 @@ public class DateTimeConverter {
                 throw new IllegalArgumentException("Invalid time format. Please use HH:mm or HH:mm:ss");
             }
         }
+    }
+
+    public static long convertToMillis(String inputDateTime, String pattern) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+        LocalDateTime dateTime = LocalDateTime.parse(inputDateTime, formatter);
+        Instant instant = dateTime.atZone(ZoneId.systemDefault()).toInstant();
+        return instant.toEpochMilli();
     }
 
 }
