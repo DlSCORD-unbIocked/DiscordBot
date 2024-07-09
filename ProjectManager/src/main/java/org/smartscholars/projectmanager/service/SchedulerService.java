@@ -43,7 +43,7 @@ public class SchedulerService {
 
         if (channel != null) {
             if (userIds.isEmpty()) {
-                channel.sendMessage("`No one can go LMAO`" + " ||@everyone|| ").queue();
+                channel.sendMessage("**`No one can go LMAO`**" + " ||@everyone|| ").queue();
                 return;
             }
             channel.sendMessage(message + " || " + users + " ||").queue();

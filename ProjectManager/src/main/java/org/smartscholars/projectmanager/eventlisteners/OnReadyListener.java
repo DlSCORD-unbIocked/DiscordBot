@@ -1,7 +1,6 @@
 package org.smartscholars.projectmanager.eventlisteners;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
@@ -18,6 +17,7 @@ import org.smartscholars.projectmanager.commands.CommandManager;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Type;
 
 
@@ -51,17 +51,31 @@ public class OnReadyListener extends ListenerAdapter implements IEvent {
         event.getGuild().createCategory("STARBOARD").queue((category) -> category.createTextChannel("starboard").queue());
 
         String filePath = "ProjectManager/src/main/resources/starboard.json";
-        FileReader reader = null;
+        FileReader reader;
         try {
             reader = new FileReader(filePath);
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             JsonObject jsonObject = new JsonObject();
 
             Gson gson = new Gson();
             String json = gson.toJson(jsonObject);
-            FileWriter writer = new FileWriter(filePath);
-            writer.write(json);
-            writer.close();
+            FileWriter writer;
+            try {
+                writer = new FileWriter(filePath);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            try {
+                writer.write(json);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            try {
+                writer.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             throw new RuntimeException(e);
         }
         Type type = new TypeToken<JsonObject>() {}.getType();

@@ -59,7 +59,7 @@ public class ActivityReactionListener extends ListenerAdapter implements IEvent 
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
                         gson.toJson(jsonObject, writer);
                         writer.close();
-                        event.getChannel().sendMessage(event.getUser().getAsMention() + " `can go!`").queue();
+                        event.getChannel().sendMessage(event.getUser().getAsMention() + " **`can go!`**").queue();
                     }
 
                 }
@@ -106,7 +106,7 @@ public class ActivityReactionListener extends ListenerAdapter implements IEvent 
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
                         gson.toJson(jsonObject, writer);
                         writer.close();
-                        event.getChannel().sendMessage("<@" + event.getUserId() + "> `changed his mind >:(`").queue();
+                        event.getChannel().sendMessage("<@" + event.getUserId() + "> **`changed his mind \uD83E\uDD13 \uD83D\uDE21`**").queue();
                     }
 
                 } catch (IOException e) {
