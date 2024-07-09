@@ -14,6 +14,10 @@ import org.smartscholars.projectmanager.util.DateTimeConverter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,7 +42,23 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
             String activity = parts[1];
             AtomicReference<String> date = new AtomicReference<>(Objects.requireNonNull(event.getValue("date")).getAsString());
             AtomicReference<String> time = new AtomicReference<>(Objects.requireNonNull(event.getValue("time")).getAsString());
-            event.reply("@everyone react to do " + activity + " on " + date + " at " + time).queue(interactionHook -> {
+
+            if (!isValidDateTime(date.get(), time.get())) {
+                event.reply("`Please Provide valid times and dates`").queue();
+                return;
+            }
+            else {
+                try {
+                    date.set(DateTimeConverter.parseDate(date.get()));
+                    time.set(DateTimeConverter.parseTime(time.get()));
+                } catch (Exception e) {
+                    logger.error("Error parsing date or time", e);
+                    event.reply("`Please Provide valid times and dates`").queue();
+                    return;
+                }
+            }
+
+            event.reply("@everyone `react to do " + activity + " on " + date + " at " + time + "`").queue(interactionHook -> {
                 interactionHook.retrieveOriginal().queue(message -> {
                     message.addReaction(Emoji.fromUnicode("U+1F44D")).queue();
                     String filePath = "ProjectManager/src/main/resources/activities.json";
@@ -54,9 +74,7 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
 
                     JsonObject rootObject = fileElement.isJsonObject() ? fileElement.getAsJsonObject() : new JsonObject();
                     JsonArray activitiesArray = rootObject.has("activities") ? rootObject.getAsJsonArray("activities") : new JsonArray();
-                    date.set(DateTimeConverter.parseDate(date.get()));
-                    time.set(DateTimeConverter.parseTime(time.get()));
-                    // Create new activity JSON object
+
                     JsonObject newActivity = new JsonObject();
                     JsonArray usersArray = new JsonArray();
                     usersArray.add(userId);
@@ -76,14 +94,29 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
                         //initiate scheduler
                         String pattern = "yyyy-MM-dd HH:mm";
                         long timeInMillis = DateTimeConverter.convertToMillis(date.get() + " " + time.get(), pattern);
-                        schedulerService.scheduleAnnouncement("1086834972876345495", "Pull up for " + activity + " now!", message.getId(), timeInMillis);
+                        schedulerService.scheduleAnnouncement("1086834972876345495", "`Pull up for " + activity + " now!`", message.getId(), timeInMillis);
                     }
                     catch (IOException e) {
                         logger.error("Error writing to file", e);
-                        interactionHook.editOriginal("Error please try again").queue();
+                        interactionHook.editOriginal("`Error please try again`").queue();
                     }
                 });
             });
         }
+    }
+    public boolean isValidTime(String time) {
+        return time.matches("([01]?[0-9]|2[0-3]):[0-5][0-9]");
+    }
+    public boolean isValidDate(String date) {
+        return date.matches("([0-9]{2})/([0-9]{2})/([0-9]{4})");
+    }
+    public boolean isValidDateTime(String date, String time) {
+        if (!isValidDate(date) || !isValidTime(time)) {
+            return false;
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
+        LocalDateTime dateTime = LocalDateTime.parse(date + " " + time, formatter);
+        Instant instant = dateTime.atZone(ZoneId.systemDefault()).toInstant();
+        return instant.toEpochMilli() > System.currentTimeMillis();
     }
 }

@@ -33,5 +33,4 @@ public class DateTimeConverter {
         Instant instant = dateTime.atZone(ZoneId.systemDefault()).toInstant();
         return instant.toEpochMilli();
     }
-
 }

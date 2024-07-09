@@ -36,7 +36,7 @@ public class ActivityCommand extends ListenerAdapter implements ICommand{
                                        .setRequiredRange(10, 10)
                                        .build();
 
-        TextInput timeInput = TextInput.create("time", "What time for (military time) " + activity + "?", TextInputStyle.SHORT)
+        TextInput timeInput = TextInput.create("time", "What (military time) for " + activity, TextInputStyle.SHORT)
                                        .setPlaceholder("HH:mm")
                                        .setRequiredRange(5, 5)
                                        .build();

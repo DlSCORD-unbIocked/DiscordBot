@@ -59,7 +59,7 @@ public class ActivityReactionListener extends ListenerAdapter implements IEvent 
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
                         gson.toJson(jsonObject, writer);
                         writer.close();
-                        event.getChannel().sendMessage(event.getUser().getAsMention() + " reacted with a thumbs up!").queue();
+                        event.getChannel().sendMessage(event.getUser().getAsMention() + " `can go!`").queue();
                     }
 
                 }
@@ -71,46 +71,47 @@ public class ActivityReactionListener extends ListenerAdapter implements IEvent 
     }
 
     public void onMessageReactionRemove(@NotNull MessageReactionRemoveEvent event) {
-        if (event.getReaction().getEmoji().getAsReactionCode().equals("👍") && !Objects.requireNonNull(event.getUser()).isBot()) {
+        if (event.getReaction().getEmoji().getAsReactionCode().equals("👍")) {
             String messageId = event.getMessageId();
-            String userId = Objects.requireNonNull(event.getUser()).getId();
-            try {
-                String filePath = "ProjectManager/src/main/resources/activities.json";
-                FileReader reader = new FileReader(filePath);
-                JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-                JsonArray activities = jsonObject.getAsJsonArray("activities");
-                reader.close();
+            if (isValidMessage(messageId)) {
+                String userId = event.getUserId();
+                try {
+                    String filePath = "ProjectManager/src/main/resources/activities.json";
+                    FileReader reader = new FileReader(filePath);
+                    JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
+                    JsonArray activities = jsonObject.getAsJsonArray("activities");
+                    reader.close();
 
-                boolean updated = false;
-                for (JsonElement activityElement : activities) {
-                    JsonObject activityObject = activityElement.getAsJsonObject();
-                    String currentMessageId = activityObject.get("messageId").getAsString();
-                    if (currentMessageId.equals(messageId)) {
-                        JsonArray users = activityObject.getAsJsonArray("users");
-                        for (int i = 0; i < users.size(); i++) {
-                            if (users.get(i).getAsString().equals(userId)) {
-                                users.remove(i);
-                                updated = true;
+                    boolean updated = false;
+                    for (JsonElement activityElement : activities) {
+                        JsonObject activityObject = activityElement.getAsJsonObject();
+                        String currentMessageId = activityObject.get("messageId").getAsString();
+                        if (currentMessageId.equals(messageId)) {
+                            JsonArray users = activityObject.getAsJsonArray("users");
+                            for (int i = 0; i < users.size(); i++) {
+                                if (users.get(i).getAsString().equals(userId)) {
+                                    users.remove(i);
+                                    updated = true;
+                                    break;
+                                }
+                            }
+                            if (updated) {
                                 break;
                             }
                         }
-                        if (updated) {
-                            break;
-                        }
                     }
-                }
 
-                if (updated) {
-                    FileWriter writer = new FileWriter(filePath);
-                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-                    gson.toJson(jsonObject, writer);
-                    writer.close();
-                    event.getChannel().sendMessage(event.getUser().getAsMention() + " removed a thumbs up!").queue();
-                }
+                    if (updated) {
+                        FileWriter writer = new FileWriter(filePath);
+                        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                        gson.toJson(jsonObject, writer);
+                        writer.close();
+                        event.getChannel().sendMessage("<@" + event.getUserId() + "> `changed his mind >:(`").queue();
+                    }
 
-            }
-            catch (IOException e) {
-                logger.error("Error updating activities.json", e);
+                } catch (IOException e) {
+                    logger.error("Error updating activities.json", e);
+                }
             }
         }
     }
