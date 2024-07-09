@@ -16,16 +16,21 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.smartscholars.projectmanager.service.SchedulerService;
 
 import java.awt.*;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.lang.reflect.Type;
 import java.util.*;
 
 
 public class ReactionListener extends ListenerAdapter implements IEvent {
     public EmbedBuilder embed;
+    private static final Logger logger = LoggerFactory.getLogger(SchedulerService.class);
     @Override
     public void execute(GenericEvent event) {
 
@@ -44,16 +49,11 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
         Guild guild = event.getGuild();
         MessageChannelUnion channel = event.getChannel();
 //        TextChannel name = guild.getTextChannelById("1259897391214231583");
-        channel.editMessageById("1259903701271974002", ",").queue();
 
         if(emojicode.equals("⭐"))
         {
             String channelUrl = channel.getId() + "/" +  messageid;
-            channel.retrieveMessageById("1259903701271974002").queue((message -> {
-                String content = message.getContentDisplay();
-                content +=  channelUrl + ",";
-                message.editMessage(content).queue();
-            }));
+            editStarboard(channelUrl, true);
             getStarredComments(guild);
         }
     }
@@ -70,64 +70,71 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
         String channelUrl = channel.getId() + "/" +  messageid;
         if(emojicode.equals("⭐"))
         {
-
-            channel.retrieveMessageById("1259903701271974002").queue((message -> {
-                String content = message.getContentDisplay();
-                content = content.replace(channelUrl + ",", "");
-                message.editMessage(content).queue();
-            }));
+            editStarboard(channelUrl, false);
             getStarredComments(guild);
         }
     }
-
-
-    public void updateStars(String path, Guild guild)
+    public void editStarboard(String path, boolean add)
     {
-        String channelid = path.split("/")[0];
-        String messageid = path.split("/")[1];
-        guild.getTextChannelById(channelid).retrieveMessageById(messageid).queue((message -> {
+        try {
+            String filePath = "ProjectManager/src/main/resources/starboard.json";
+            FileReader reader = new FileReader(filePath);
+            Type type = new TypeToken<JsonObject>() {}.getType();
+            JsonObject jsonObject = new Gson().fromJson(reader, type);
+            String leaderboard = jsonObject.get("leaderboard").getAsString();
+
+            if(add)
+            {
+                leaderboard += path + ",";
+            }
+            else
+            {
+                leaderboard = leaderboard.replace(path + ",", "");
+            }
+            jsonObject.remove("leaderboard");
+            jsonObject.addProperty("leaderboard", leaderboard);
+            reader.close();
+            Gson gson = new Gson();
+            String json = gson.toJson(jsonObject);
+
+            FileWriter writer = new FileWriter(filePath);
+            writer.write(json);
+            writer.close();
+        }
+        catch (Exception e) {
+            logger.error("Error reading from file", e);
+        }
+    }
+
+    public void updateStars(HashMap<String, Integer> starboard, String path, Guild guild)
+    {
+        String embedchannelid = path.split("/")[0];
+        String embedmessageid = path.split("/")[1];
+        guild.getTextChannelById(embedchannelid).retrieveMessageById(embedmessageid).queue((message -> {
             embed = new EmbedBuilder();
             embed.setTitle("Star Leaderboard");
             embed.setColor(Color.BLUE);
 
+            Set<String> keys = starboard.keySet();
 
-            // in progress
-            String filePath = "ProjectManager/src/main/resources/activities.json";
-            FileReader reader = null;
-            try {
-                reader = new FileReader(filePath);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            Type type = new TypeToken<JsonObject>() {}.getType();
-            JsonObject jsonObject = new Gson().fromJson(reader, type);
-            JsonArray starredMessages = jsonObject.getAsJsonArray("leaderboard");
-
-            //
-
-            for(JsonElement msg : starredMessages)
+            String[] starredMessages = keys.toArray(new String[keys.size()]);
+            for(String mess : starredMessages)
             {
-
-                String mess = msg.getAsString();
-                String chid = mess.split("/")[0];
-                String messid = mess.split("/")[1];
-                String stars = "temp";
-
-                guild.getTextChannelById(chid).retrieveMessageById(messid).queue((m -> {
-                    embed.addField("Stars: " + stars, "Author: "+ m.getAuthor().getName() +"\nMessage: " + m.getContentDisplay() + "\nOriginal: https://discord.com/channels/" + guild.getId()+"/"+chid+"/"+messid, false);
+                String channelid = mess.split("/")[0];
+                String messageid = mess.split("/")[1];
+                guild.getTextChannelById(channelid).retrieveMessageById(messageid).queue((m -> {
+                    embed.addField("Stars: " + starboard.get(starredMessages[0]), "Author: "+ m.getAuthor().getName() +"\nMessage: " + m.getContentDisplay() + "\nOriginal: https://discord.com/channels/" + guild.getId()+"/"+channelid+"/"+messageid, false);
 
                     message.editMessageEmbeds(embed.build()).queue();
                 }));
-
 
             }
 
         }));
     }
     public void getStarredComments(Guild guild) {
-        int r;
 
-        String filePath = "ProjectManager/src/main/resources/activities.json";
+        String filePath = "ProjectManager/src/main/resources/starboard.json";
         FileReader reader;
         try {
             reader = new FileReader(filePath);
@@ -137,11 +144,11 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
         Type type = new TypeToken<JsonObject>() {
         }.getType();
         JsonObject jsonObject = new Gson().fromJson(reader, type);
-        String starboard = jsonObject.getAsString();
+        String leader = jsonObject.get("leaderboard").getAsString();
+        String path = jsonObject.get("starboardPath").getAsString();
 
-        System.out.println(starboard);
 
-        String[] parts = starboard.split(",");
+        String[] parts = leader.split(",");
 
         HashMap<String, Integer> starboard = new HashMap<>();
         for (String element : parts) {
@@ -150,7 +157,6 @@ public class ReactionListener extends ListenerAdapter implements IEvent {
             }
         }
 
-        updateStars(, guild);
-    }));
-    }
+        updateStars(starboard, path, guild);
+    };
 }
