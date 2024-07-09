@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager.service;
 
 import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
 import net.dv8tion.jda.api.entities.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,18 +9,14 @@ import org.slf4j.LoggerFactory;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ActivitiesManager {
 
     private final Logger logger = LoggerFactory.getLogger(ActivitiesManager.class);
-    private final String filePath = "src/main/resources/activities.json";
-    private final Gson gson = new Gson();
+    private final String filePath = "ProjectManager/src/main/resources/activities.json";
     private final SchedulerService schedulerService;
 
     public ActivitiesManager(SchedulerService schedulerService) {
@@ -61,5 +58,61 @@ public class ActivitiesManager {
         catch (IOException e) {
             logger.error("Error writing to file", e);
         }
+    }
+
+    public void deleteActivity(String messageId) {
+        try {
+            FileReader reader = new FileReader(filePath);
+            Type type = new TypeToken<JsonObject>() {}.getType();
+            JsonObject jsonObject = new Gson().fromJson(reader, type);
+            JsonArray activitiesArray = jsonObject.getAsJsonArray("activities");
+
+            for (int i = 0; i < activitiesArray.size(); i++) {
+                JsonObject activity = activitiesArray.get(i).getAsJsonObject();
+                String currentMessageId = activity.get("messageId").getAsString();
+                if (currentMessageId.equals(messageId)) {
+                    activitiesArray.remove(i);
+                    break;
+                }
+            }
+
+            reader.close();
+            Gson gson = new Gson();
+            String json = gson.toJson(jsonObject);
+            FileWriter writer = new FileWriter(filePath);
+            writer.write(json);
+            writer.close();
+            logger.info("Activity deleted");
+        }
+        catch (Exception e) {
+            logger.error("Error reading from file", e);
+        }
+    }
+
+    public List<String> findUsersByMessageId(String messageId) {
+        try {
+            String filePath = "ProjectManager/src/main/resources/activities.json";
+            FileReader reader = new FileReader(filePath);
+            Type type = new TypeToken<JsonObject>() {}.getType();
+            JsonObject jsonObject = new Gson().fromJson(reader, type);
+            JsonArray activitiesArray = jsonObject.getAsJsonArray("activities");
+
+            for (int i = 0; i < activitiesArray.size(); i++) {
+                JsonObject activity = activitiesArray.get(i).getAsJsonObject();
+                String currentMessageId = activity.get("messageId").getAsString();
+                if (currentMessageId.equals(messageId)) {
+                    JsonArray usersArray = activity.getAsJsonArray("users");
+                    List<String> users = new ArrayList<>();
+                    for (int j = 0; j < usersArray.size(); j++) {
+                        users.add(usersArray.get(j).getAsString());
+                    }
+                    return users;
+                }
+            }
+        }
+        catch (Exception e) {
+            logger.error("Error reading from file", e);
+        }
+        return new ArrayList<>();
     }
 }

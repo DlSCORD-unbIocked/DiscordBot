@@ -1,18 +1,9 @@
 package org.smartscholars.projectmanager.service;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,6 +14,7 @@ public class SchedulerService {
     private static final Logger logger = LoggerFactory.getLogger(SchedulerService.class);
     private final JDA jda;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static ActivitiesManager activitiesManager;
 
     public SchedulerService(JDA jda) {
         this.jda = jda;
@@ -36,7 +28,7 @@ public class SchedulerService {
     private void sendAnnouncement(String channelId, String message, String messageId) {
         TextChannel channel = jda.getTextChannelById(channelId);
         StringBuilder users = new StringBuilder();
-        List<String> userIds = findUsersByMessageId(messageId);
+        List<String> userIds = activitiesManager.findUsersByMessageId(messageId);
         for (String userId : userIds) {
             users.append("<@").append(userId).append("> ");
         }
@@ -47,10 +39,10 @@ public class SchedulerService {
                 return;
             }
             channel.sendMessage(message + " || " + users + " ||").queue();
-            deleteActivity(messageId);
+            activitiesManager.deleteActivity(messageId);
         }
         else {
-            System.err.println("Channel not found");
+            logger.error("Channel not found");
         }
     }
 
@@ -70,59 +62,7 @@ public class SchedulerService {
         }
     }
 
-    public static void deleteActivity(String messageId) {
-        try {
-            String filePath = "ProjectManager/src/main/resources/activities.json";
-            FileReader reader = new FileReader(filePath);
-            Type type = new TypeToken<JsonObject>() {}.getType();
-            JsonObject jsonObject = new Gson().fromJson(reader, type);
-            JsonArray activitiesArray = jsonObject.getAsJsonArray("activities");
-
-            for (int i = 0; i < activitiesArray.size(); i++) {
-                JsonObject activity = activitiesArray.get(i).getAsJsonObject();
-                String currentMessageId = activity.get("messageId").getAsString();
-                if (currentMessageId.equals(messageId)) {
-                    activitiesArray.remove(i);
-                    break;
-                }
-            }
-
-            reader.close();
-            Gson gson = new Gson();
-            String json = gson.toJson(jsonObject);
-            FileWriter writer = new FileWriter(filePath);
-            writer.write(json);
-            writer.close();
-        }
-        catch (Exception e) {
-            logger.error("Error reading from file", e);
-        }
-    }
-
-    public static List<String> findUsersByMessageId(String messageId) {
-        try {
-            String filePath = "ProjectManager/src/main/resources/activities.json";
-            FileReader reader = new FileReader(filePath);
-            Type type = new TypeToken<JsonObject>() {}.getType();
-            JsonObject jsonObject = new Gson().fromJson(reader, type);
-            JsonArray activitiesArray = jsonObject.getAsJsonArray("activities");
-
-            for (int i = 0; i < activitiesArray.size(); i++) {
-                JsonObject activity = activitiesArray.get(i).getAsJsonObject();
-                String currentMessageId = activity.get("messageId").getAsString();
-                if (currentMessageId.equals(messageId)) {
-                    JsonArray usersArray = activity.getAsJsonArray("users");
-                    List<String> users = new ArrayList<>();
-                    for (int j = 0; j < usersArray.size(); j++) {
-                        users.add(usersArray.get(j).getAsString());
-                    }
-                    return users;
-                }
-            }
-        }
-        catch (Exception e) {
-            logger.error("Error reading from file", e);
-        }
-        return new ArrayList<>();
+    public static void setActivityManager(ActivitiesManager manager) {
+        activitiesManager = manager;
     }
 }

@@ -46,10 +46,9 @@ public class ImageCommand implements ICommand {
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
             event.reply("Invalid image URL. Please ensure it starts with http:// or https://").setEphemeral(true).queue();
             return;
-        // Validate URL format (basic validation)
+
         }
         String effect = Objects.requireNonNull(event.getOption("effect")).getAsString();
-//        // Example validation for effect, assuming a predefined list of effects
         if (!validateEffect(effect)) {
             event.reply("Invalid effect. Please choose from the predefined list (See /image-options).").setEphemeral(true).queue();
             return;
@@ -71,7 +70,7 @@ public class ImageCommand implements ICommand {
 
         try {
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            // Check for 307 Temporary Redirect
+
             if (response.statusCode() == 307) {
                 String newUrl = response.headers().firstValue("Location").orElse(null);
                 if (newUrl != null) {

@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.slf4j.Logger;
 import org.smartscholars.projectmanager.commands.CommandInfo;
-import org.smartscholars.projectmanager.commands.CommandManager;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.util.ListUtils;

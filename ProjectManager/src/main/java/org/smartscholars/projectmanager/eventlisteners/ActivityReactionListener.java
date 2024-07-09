@@ -109,7 +109,8 @@ public class ActivityReactionListener extends ListenerAdapter implements IEvent 
                         event.getChannel().sendMessage("<@" + event.getUserId() + "> **`changed his mind \uD83E\uDD13 \uD83D\uDE21`**").queue();
                     }
 
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     logger.error("Error updating activities.json", e);
                 }
             }

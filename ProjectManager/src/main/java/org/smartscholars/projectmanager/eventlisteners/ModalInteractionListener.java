@@ -1,6 +1,5 @@
 package org.smartscholars.projectmanager.eventlisteners;
 
-import com.google.gson.*;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -11,10 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.service.ActivitiesManager;
 import org.smartscholars.projectmanager.service.SchedulerService;
 import org.smartscholars.projectmanager.util.DateTimeConverter;
-
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -66,6 +61,7 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
                 message.addReaction(Emoji.fromUnicode("U+1F44D")).queue();
                 try {
                     activitiesManager.addActivity(activity, userId, message, date.get(), time.get(), timeInMillis);
+                    SchedulerService.setActivityManager(activitiesManager);
                 } catch (Exception e) {
                     logger.error("Error adding activity", e);
                     event.reply("**`Error adding activity`**").queue();
@@ -73,12 +69,15 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
             }));
         }
     }
+
     public boolean isValidTime(String time) {
         return time.matches("([01]?[0-9]|2[0-3]):[0-5][0-9]");
     }
+
     public boolean isValidDate(String date) {
         return date.matches("([0-9]{2})/([0-9]{2})/([0-9]{4})");
     }
+
     public boolean isValidDateTime(String date, String time) {
         if (!isValidDate(date) || !isValidTime(time)) {
             return false;
