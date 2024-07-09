@@ -1,5 +1,7 @@
 package org.smartscholars.projectmanager.eventlisteners;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -9,6 +11,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartscholars.projectmanager.util.DateTimeConverter;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,12 +41,16 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent{
                     usersArray.add(userId);
                     json.addProperty("messageId", message.getId());
                     json.addProperty("activity", activity);
-                    json.addProperty("date", date);
-                    json.addProperty("time", time);
+                    json.addProperty("date", DateTimeConverter.parseDate(date));
+                    json.addProperty("time", DateTimeConverter.parseTime(time));
                     json.addProperty("users", usersArray.toString());
+
+                    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                    String prettyJsonString = gson.toJson(json);
+
                     String filePath = "ProjectManager/src/main/resources/activities.json";
                     try (FileWriter file = new FileWriter(filePath)) {
-                        file.write(json.toString());
+                        file.write(prettyJsonString);
                         file.flush();
                     }
                     catch (IOException e) {
