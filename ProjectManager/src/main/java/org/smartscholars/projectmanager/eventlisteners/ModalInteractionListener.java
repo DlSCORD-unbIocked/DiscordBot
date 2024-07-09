@@ -39,7 +39,8 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
                     JsonElement fileElement;
                     try (FileReader reader = new FileReader(filePath)) {
                         fileElement = JsonParser.parseReader(reader);
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         fileElement = new JsonObject(); // Create a new JSON object if an error occurs
                         logger.error("Error reading from file", e);
                     }
@@ -64,7 +65,8 @@ public class ModalInteractionListener extends ListenerAdapter implements IEvent 
                         Gson gson = new GsonBuilder().setPrettyPrinting().create();
                         file.write(gson.toJson(rootObject));
                         file.flush();
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         logger.error("Error writing to file", e);
                         interactionHook.editOriginal("Error please try again").queue();
                     }
