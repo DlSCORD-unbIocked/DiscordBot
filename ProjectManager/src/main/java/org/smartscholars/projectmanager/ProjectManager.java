@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
 import org.smartscholars.projectmanager.eventlisteners.*;
+import org.smartscholars.projectmanager.service.SchedulerService;
 
 import javax.security.auth.login.LoginException;
 import java.util.List;
@@ -27,6 +29,7 @@ public class ProjectManager {
         builder.setStatus(OnlineStatus.ONLINE);
         shardManager = builder.build();
 
+        JDA jda = shardManager.getShards().getFirst();
         //options
 
 
@@ -46,6 +49,9 @@ public class ProjectManager {
         loader.registerEventListeners();
 
         logger.info("Bot is online.");
+        SchedulerService schedulerService = new SchedulerService(jda);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(schedulerService::shutdown));
     }
 
     public ShardManager getShardManager() {
