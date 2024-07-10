@@ -42,7 +42,6 @@ public class TextToSpeechCommand implements ICommand {
         String message = Objects.requireNonNull(event.getOption("message")).getAsString();
         String voice = Objects.requireNonNull(event.getOption("voice")).getAsString();
 
-        String apiURL = "https://api.elevenlabs.io/v1/voices";
         event.reply("test").queue();
     }
 }
