@@ -5,20 +5,26 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
+import org.smartscholars.projectmanager.util.ListUtils;
 
+import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.List;
 
 
 @CommandInfo(
@@ -37,16 +43,15 @@ import java.util.*;
 public class VoiceIdOptionsCommand implements ICommand {
 
     private final Logger logger = LoggerFactory.getLogger(VoiceIdOptionsCommand.class);
-    private final int ITEMS_PER_PAGE = 10;
-
+    public static List<Map.Entry<String, String>> voiceEntries = new ArrayList<>();
+    public static List<List<Map.Entry<String, String>>> partitions;
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
         event.deferReply().queue();
         Dotenv dotenv = Dotenv.load();
         String authToken = dotenv.get("SPEECH_TOKEN");
-
-        String page = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsString() : "1";
+        int currentPage = Integer.parseInt(event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsString() : "1");
 
         String apiURL = "https://api.elevenlabs.io/v1/voices";
 
@@ -67,7 +72,6 @@ public class VoiceIdOptionsCommand implements ICommand {
             JsonElement jsonElement = JsonParser.parseString(responseBody);
             JsonObject jsonObj = jsonElement.getAsJsonObject();
             JsonArray voicesArray = jsonObj.getAsJsonArray("voices");
-            List<Map.Entry<String, String>> voiceEntries = new ArrayList<>();
 
             for (int i = 0; i < voicesArray.size(); i++) {
                 JsonObject voice = voicesArray.get(i).getAsJsonObject();
@@ -77,23 +81,37 @@ public class VoiceIdOptionsCommand implements ICommand {
             }
 
             int totalSize = voiceEntries.size();
-            int fromIndex = (Integer.parseInt(page) - 1) * ITEMS_PER_PAGE;
-            int toIndex = Math.min(fromIndex + ITEMS_PER_PAGE, totalSize);
-            List<Map.Entry<String, String>> pageEntries = voiceEntries.subList(fromIndex, toIndex);
+            int ITEMS_PER_PAGE = 10;
 
-            StringBuilder builder = new StringBuilder();
-            builder.append("Voice ID Options\n");
+            boolean isFirstPage = currentPage <= 1;
+            boolean isLastPage = currentPage >= (totalSize + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
 
-            for (Map.Entry<String, String> entry : pageEntries) {
-                builder.append("ID: ").append(entry.getKey()).append(", Name: ").append(entry.getValue()).append("\n");
-            }
+            partitions = ListUtils.partition(voiceEntries, ITEMS_PER_PAGE);
 
-            event.getHook().sendMessage(builder.toString()).queue();
+            EmbedBuilder embed = buildPageEmbed(partitions.get(currentPage - 1), currentPage, partitions.size());
+
+            Button prevButton = Button.of(ButtonStyle.PRIMARY,"prev_voice_page", "Previous");
+            Button nextButton = Button.of(ButtonStyle.PRIMARY,"next_voice_page", "Next");
+
+            prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
+            nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
+
+            event.getHook().sendMessageEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue();
         }
         catch (IOException | InterruptedException e) {
             logger.error("Failed to fetch voice ID options", e);
             event.getHook().sendMessage("An error occurred").queue();
         }
     }
+
+    public static EmbedBuilder buildPageEmbed(List<Map.Entry<String, String>> commands, int current, int totalPages) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("Voice ID Options");
+        embed.setDescription("Page " + current + " of " + totalPages);
+        embed.setColor(new Color(0x1F8B4C));
+        commands.forEach(entry -> embed.addField(entry.getValue(), entry.getKey(), false));
+        return embed;
+    }
 }
+
 
