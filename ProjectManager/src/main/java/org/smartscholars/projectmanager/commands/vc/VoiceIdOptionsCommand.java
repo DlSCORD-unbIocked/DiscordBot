@@ -18,7 +18,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
+import java.util.*;
 
 
 @CommandInfo(
@@ -37,11 +37,16 @@ import java.net.http.HttpResponse;
 public class VoiceIdOptionsCommand implements ICommand {
 
     private final Logger logger = LoggerFactory.getLogger(VoiceIdOptionsCommand.class);
+    private final int ITEMS_PER_PAGE = 10;
+
+
     @Override
     public void execute(SlashCommandInteractionEvent event) {
         event.deferReply().queue();
         Dotenv dotenv = Dotenv.load();
         String authToken = dotenv.get("SPEECH_TOKEN");
+
+        String page = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsString() : "1";
 
         String apiURL = "https://api.elevenlabs.io/v1/voices";
 
@@ -62,23 +67,27 @@ public class VoiceIdOptionsCommand implements ICommand {
             JsonElement jsonElement = JsonParser.parseString(responseBody);
             JsonObject jsonObj = jsonElement.getAsJsonObject();
             JsonArray voicesArray = jsonObj.getAsJsonArray("voices");
-            StringBuilder builder = new StringBuilder();
+            List<Map.Entry<String, String>> voiceEntries = new ArrayList<>();
 
             for (int i = 0; i < voicesArray.size(); i++) {
                 JsonObject voice = voicesArray.get(i).getAsJsonObject();
-                String id = "";
-                String name = "";
-
-                if (voice.has("voice_id") && !voice.get("voice_id").isJsonNull()) {
-                    id = voice.get("voice_id").getAsString();
+                if (voice.has("voice_id") && !voice.get("voice_id").isJsonNull() && voice.has("name") && !voice.get("name").isJsonNull()) {
+                    voiceEntries.add(new AbstractMap.SimpleEntry<>(voice.get("voice_id").getAsString(), voice.get("name").getAsString()));
                 }
-
-                if (voice.has("name") && !voice.get("name").isJsonNull()) {
-                    name = voice.get("name").getAsString();
-                }
-
-                builder.append("ID: ").append(id).append(", Name: ").append(name).append("\n");
             }
+
+            int totalSize = voiceEntries.size();
+            int fromIndex = (Integer.parseInt(page) - 1) * ITEMS_PER_PAGE;
+            int toIndex = Math.min(fromIndex + ITEMS_PER_PAGE, totalSize);
+            List<Map.Entry<String, String>> pageEntries = voiceEntries.subList(fromIndex, toIndex);
+
+            StringBuilder builder = new StringBuilder();
+            builder.append("Voice ID Options\n");
+
+            for (Map.Entry<String, String> entry : pageEntries) {
+                builder.append("ID: ").append(entry.getKey()).append(", Name: ").append(entry.getValue()).append("\n");
+            }
+
             event.getHook().sendMessage(builder.toString()).queue();
         }
         catch (IOException | InterruptedException e) {
@@ -87,3 +96,4 @@ public class VoiceIdOptionsCommand implements ICommand {
         }
     }
 }
+
