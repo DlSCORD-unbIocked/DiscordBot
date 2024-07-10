@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.slf4j.Logger;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
@@ -25,26 +26,32 @@ import java.util.List;
 public class ImageOptionsCommand implements ICommand {
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(HelpCommand.class);
-    public int totalPages;
     public static final int COMMANDS_PER_PAGE = 15;
     public static final List<List<String>> pages = paginateCommands(List.of(ImageCommand.endpoints), COMMANDS_PER_PAGE);
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        int currentPage = 1;
-        currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
+
+        int currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
 
 
 
         if (currentPage > pages.size()) currentPage = pages.size();
         if (currentPage < 1) currentPage = 1;
 
+        boolean isFirstPage = currentPage == 1;
+        boolean isLastPage = currentPage >= ImageOptionsCommand.pages.size();
+
+        Button galleryButton = Button.of(ButtonStyle.LINK,"https://jeyy.xyz/gallery", "View Options Gallery");
+        Button prev = Button.of(ButtonStyle.PRIMARY,"left_image", Emoji.fromUnicode("◀"));
+        Button next = Button.of(ButtonStyle.PRIMARY,"right_image", Emoji.fromUnicode("▶"));
+
+        prev = isFirstPage ? prev.asDisabled() : prev;
+        next = isLastPage ? next.asDisabled() : next;
+
         EmbedBuilder embed = buildPageEmbed(pages.get(currentPage - 1), currentPage, pages.size());
-        Button galleryButton = Button.link("https://jeyy.xyz/gallery", "View Options Gallery");
-        event.replyEmbeds(embed.build()).addActionRow(galleryButton).addActionRow(
-                        Button.primary("left_image", Emoji.fromUnicode("◀")), // Button with only a label
-                        Button.primary("right_image", Emoji.fromUnicode("▶"))) // Button with only an emoji
-                .queue();
+
+        event.replyEmbeds(embed.build()).addActionRow(galleryButton).addActionRow(prev, next).queue();
 
 
     }

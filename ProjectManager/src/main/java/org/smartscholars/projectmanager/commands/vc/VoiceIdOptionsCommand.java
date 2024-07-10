@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -43,7 +44,7 @@ import java.util.List;
 public class VoiceIdOptionsCommand implements ICommand {
 
     private final Logger logger = LoggerFactory.getLogger(VoiceIdOptionsCommand.class);
-    public static List<Map.Entry<String, String>> voiceEntries = new ArrayList<>();
+    public static List<Map.Entry<String, String>> voiceEntries;
     public static List<List<Map.Entry<String, String>>> partitions;
 
     @Override
@@ -51,7 +52,8 @@ public class VoiceIdOptionsCommand implements ICommand {
         event.deferReply().queue();
         Dotenv dotenv = Dotenv.load();
         String authToken = dotenv.get("SPEECH_TOKEN");
-        int currentPage = Integer.parseInt(event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsString() : "1");
+
+        int currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
 
         String apiURL = "https://api.elevenlabs.io/v1/voices";
 
@@ -73,6 +75,10 @@ public class VoiceIdOptionsCommand implements ICommand {
             JsonObject jsonObj = jsonElement.getAsJsonObject();
             JsonArray voicesArray = jsonObj.getAsJsonArray("voices");
 
+            //clear existing data before fetching new data
+            voiceEntries = new ArrayList<>();
+            partitions = new ArrayList<>();
+
             for (int i = 0; i < voicesArray.size(); i++) {
                 JsonObject voice = voicesArray.get(i).getAsJsonObject();
                 if (voice.has("voice_id") && !voice.get("voice_id").isJsonNull() && voice.has("name") && !voice.get("name").isJsonNull()) {
@@ -81,22 +87,27 @@ public class VoiceIdOptionsCommand implements ICommand {
             }
 
             int totalSize = voiceEntries.size();
-            int ITEMS_PER_PAGE = 10;
+            //change to whatever
+            int ITEMS_PER_PAGE = 7;
 
-            boolean isFirstPage = currentPage <= 1;
+            boolean isFirstPage = currentPage == 1;
             boolean isLastPage = currentPage >= (totalSize + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
 
             partitions = ListUtils.partition(voiceEntries, ITEMS_PER_PAGE);
 
+            if (currentPage > partitions.size()) currentPage = partitions.size();
+            if (currentPage < 1) currentPage = 1;
+
             EmbedBuilder embed = buildPageEmbed(partitions.get(currentPage - 1), currentPage, partitions.size());
 
-            Button prevButton = Button.of(ButtonStyle.PRIMARY,"prev_voice_page", "Previous");
-            Button nextButton = Button.of(ButtonStyle.PRIMARY,"next_voice_page", "Next");
+            Button linkButton = Button.of(ButtonStyle.LINK, "https://www.elevenlabs.io", "Eleven Labs");
+            Button prevButton = Button.of(ButtonStyle.PRIMARY,"prev_voice_page", Emoji.fromUnicode("◀"));
+            Button nextButton = Button.of(ButtonStyle.PRIMARY,"next_voice_page", Emoji.fromUnicode("▶"));
 
             prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
             nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
 
-            event.getHook().sendMessageEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue();
+            event.getHook().sendMessageEmbeds(embed.build()).addActionRow(linkButton).addActionRow(prevButton, nextButton).queue();
         }
         catch (IOException | InterruptedException e) {
             logger.error("Failed to fetch voice ID options", e);
