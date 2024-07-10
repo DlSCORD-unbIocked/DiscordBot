@@ -9,6 +9,13 @@ import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Objects;
 
 @CommandInfo(name = "text-to-speech",
@@ -21,7 +28,7 @@ import java.util.Objects;
                     required = true
                 ),
                 @CommandOption(
-                    name = "voice",
+                    name = "voice_id",
                     description = "The voice you want to use",
                     type = OptionType.STRING,
                     required = false
@@ -30,18 +37,53 @@ import java.util.Objects;
 )
 public class TextToSpeechCommand implements ICommand {
 
-    private final int CHUNK_SIZE = 1024;
-    private final String EXPORT_PATH = "ProjectManager/src/main/resources/audio/output.mp3";
+
     private final Logger logger = LoggerFactory.getLogger(TextToSpeechCommand.class);
+    private final String outputPath = "ProjectManager/src/main/resources/tts.mp3";
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
+        event.deferReply().queue();
         Dotenv dotenv = Dotenv.load();
         String authToken = dotenv.get("SPEECH_TOKEN");
 
         String message = Objects.requireNonNull(event.getOption("message")).getAsString();
-        String voice = Objects.requireNonNull(event.getOption("voice")).getAsString();
+        String voiceId = event.getOption("voice_id") != null ? Objects.requireNonNull(event.getOption("voice_id")).getAsString() : "zcAOhNBS3c14rBihAFp1";
 
-        event.reply("test").queue();
+        String ttsUrl = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId + "/stream";
+
+        String requestBody = String.format("{\"text\":\"%s\", \"model_id\": \"eleven_multilingual_v2\", \"voice_settings\": {\"stability\": 0.5, \"similarity_boost\": 0.8, \"style\": 0.0, \"use_speaker_boost\": true}}", message);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(java.net.URI.create(ttsUrl))
+                .header("Accept", "application/json")
+                .header("xi-api-key", authToken)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        HttpClient client = HttpClient.newHttpClient();
+        try {
+            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            File outputFile = new File(outputPath);
+            try (InputStream responseBody = response.body(); OutputStream outputStream = new FileOutputStream(outputFile)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = responseBody.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, length);
+                }
+            }
+            catch (Exception e) {
+                logger.error("Error while saving the text-to-speech response to file", e);
+                event.reply("Error while saving the text-to-speech output").queue();
+                return;
+            }
+
+            event.getHook().sendMessage("Text-to-speech processing complete. Output saved to " + outputPath).queue();
+        }
+        catch (Exception e) {
+            logger.error("Error while sending request to text-to-speech API", e);
+            event.reply("Error while processing text-to-speech").queue();
+        }
     }
 }
