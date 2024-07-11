@@ -1,18 +1,25 @@
 package org.smartscholars.projectmanager.commands.vc.lavaplayer;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import net.dv8tion.jda.api.entities.Guild;
 
 public class GuildMusicManager {
-    public final AudioPlayer player;
-    public final TrackScheduler scheduler;
+    private final TrackScheduler trackScheduler;
+    private final LavaPlayerAudioProvider audioForwarder;
 
-    public GuildMusicManager(AudioPlayer player) {
-        this.player = player;
-        this.scheduler = new TrackScheduler(player);
-        player.addListener(scheduler);
+    public GuildMusicManager(AudioPlayerManager manager, Guild guild) {
+        AudioPlayer player = manager.createPlayer();
+        trackScheduler = new TrackScheduler(player);
+        player.addListener(trackScheduler);
+        audioForwarder = new LavaPlayerAudioProvider(player, guild);
     }
 
-    public LavaPlayerAudioProvider getSendHandler() {
-        return new LavaPlayerAudioProvider(player);
+    public TrackScheduler getTrackScheduler() {
+        return trackScheduler;
+    }
+
+    public LavaPlayerAudioProvider getAudioForwarder() {
+        return audioForwarder;
     }
 }

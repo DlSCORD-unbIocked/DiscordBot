@@ -30,7 +30,6 @@ public class JoinVoiceChannelCommand implements ICommand {
             event.reply("You need to be in a voice channel to use this command").queue();
             return;
         }
-        audioManager.setSendingHandler(new LavaPlayerAudioProvider(player));
         audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
         event.reply("Joining voice channel").queue();
     }

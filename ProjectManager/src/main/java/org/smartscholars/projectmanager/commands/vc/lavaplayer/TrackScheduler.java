@@ -6,40 +6,47 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 public class TrackScheduler extends AudioEventAdapter {
 
-    public final AudioPlayer player;
+    private final AudioPlayer player;
+    private final BlockingQueue<AudioTrack> queue = new LinkedBlockingQueue<>();
+    private boolean isRepeat = false;
+
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
     }
 
     @Override
-    public void onPlayerPause(AudioPlayer player) {
-
-    }
-
-    @Override
-    public void onPlayerResume(AudioPlayer player) {
-
-    }
-
-    @Override
-    public void onTrackStart(AudioPlayer player, AudioTrack track) {
-
-    }
-
-    @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-
+        if(isRepeat) {
+            player.startTrack(track.makeClone(), false);
+        } else {
+            player.startTrack(queue.poll(), false);
+        }
     }
 
-    @Override
-    public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
-
+    public void queue(AudioTrack track) {
+        if(!player.startTrack(track, true)) {
+            queue.offer(track);
+        }
     }
 
-    @Override
-    public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
+    public AudioPlayer getPlayer() {
+        return player;
+    }
 
+    public BlockingQueue<AudioTrack> getQueue() {
+        return queue;
+    }
+
+    public boolean isRepeat() {
+        return isRepeat;
+    }
+
+    public void setRepeat(boolean repeat) {
+        isRepeat = repeat;
     }
 }

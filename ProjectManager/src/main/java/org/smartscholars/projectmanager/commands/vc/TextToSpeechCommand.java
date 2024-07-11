@@ -1,7 +1,6 @@
 package org.smartscholars.projectmanager.commands.vc;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.slf4j.Logger;
@@ -9,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
-import org.smartscholars.projectmanager.commands.vc.lavaplayer.MusicPlayer;
+import org.smartscholars.projectmanager.util.VoiceChannelUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,7 +17,6 @@ import java.io.OutputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Objects;
 
 @CommandInfo(name = "text-to-speech",
         description = "Converts text to speech in vc (make sure you are in vc)",
@@ -41,35 +39,19 @@ public class TextToSpeechCommand implements ICommand {
 
     private final Logger logger = LoggerFactory.getLogger(TextToSpeechCommand.class);
     private final String outputPath = "ProjectManager/src/main/resources/tts.mp3";
-    private final MusicPlayer musicPlayer;
-
-    public TextToSpeechCommand(MusicPlayer musicPlayer) {
-        this.musicPlayer = musicPlayer;
-    }
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        if (!Objects.requireNonNull(event.getGuild()).getAudioManager().isConnected()) {
-            event.reply("You need to be in a voice channel to use this command").queue();
-            return;
-        }
-        VoiceChannel userVoiceChannel = (VoiceChannel) Objects.requireNonNull(Objects.requireNonNull(event.getMember()).getVoiceState()).getChannel();
-        VoiceChannel botVoiceChannel = (VoiceChannel) event.getGuild().getAudioManager().getConnectedChannel();
-
-        if (userVoiceChannel == null || !userVoiceChannel.equals(botVoiceChannel)) {
-            event.reply("You need to be in the same voice channel as the bot to use this command").queue();
+        if (!VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
             return;
         }
 
         event.deferReply().queue();
-        String message = Objects.requireNonNull(event.getOption("message")).getAsString();
-        String voiceId = event.getOption("voice_id") != null ? Objects.requireNonNull(event.getOption("voice_id")).getAsString() : "zcAOhNBS3c14rBihAFp1";
-
-        //generateTTS(message, voiceId);
         File file = new File(outputPath.replace("\\", "/"));
-        musicPlayer.play("file://" + file.getAbsolutePath());
-        //musicPlayer.play("https://www.youtube.com/watch?v=AzqTd73CCrA");
-
+        if (!file.exists()) {
+            logger.error("TTS file does not exist: {}", file.getAbsolutePath());
+            event.getHook().sendMessage("An error occurred: TTS file does not exist.").queue();
+        }
     }
 
     private void generateTTS(String message, String voiceId) {

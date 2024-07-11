@@ -1,26 +1,70 @@
 package org.smartscholars.projectmanager.commands.vc.lavaplayer;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import net.dv8tion.jda.api.entities.Guild;
+import org.slf4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class PlayerManager {
-    private final AudioPlayerManager audioPlayerManager;
-    private final AudioPlayer audioPlayer;
 
-    public PlayerManager() {
-        audioPlayerManager = new DefaultAudioPlayerManager();
-        AudioSourceManagers.registerLocalSource(audioPlayerManager);
+    private static PlayerManager INSTANCE;
+    private final Map<Long, GuildMusicManager> guildMusicManagers = new HashMap<>();
+    private final AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(PlayerManager.class);
+
+    private PlayerManager() {
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
-        audioPlayer = audioPlayerManager.createPlayer();
+        AudioSourceManagers.registerLocalSource(audioPlayerManager);
     }
 
-    public AudioPlayerManager getManager() {
-        return audioPlayerManager;
+    public static PlayerManager get() {
+        if(INSTANCE == null) {
+            INSTANCE = new PlayerManager();
+        }
+        return INSTANCE;
     }
 
-    public AudioPlayer getPlayer() {
-        return audioPlayer;
+    public GuildMusicManager getGuildMusicManager(Guild guild) {
+        return guildMusicManagers.computeIfAbsent(guild.getIdLong(), (guildId) -> {
+            GuildMusicManager musicManager = new GuildMusicManager(audioPlayerManager, guild);
+
+            guild.getAudioManager().setSendingHandler(musicManager.getAudioForwarder());
+
+            return musicManager;
+        });
+    }
+
+    public void play(Guild guild, String trackURL) {
+        GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
+        audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                guildMusicManager.getTrackScheduler().queue(track);
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {
+                guildMusicManager.getTrackScheduler().queue(playlist.getTracks().get(0));
+            }
+
+            @Override
+            public void noMatches() {
+
+            }
+
+            @Override
+            public void loadFailed(FriendlyException exception) {
+                logger.error("Failed to load track", exception);
+            }
+        });
     }
 }

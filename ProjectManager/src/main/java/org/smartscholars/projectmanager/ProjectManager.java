@@ -1,10 +1,4 @@
 package org.smartscholars.projectmanager;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -15,8 +9,6 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
-import org.smartscholars.projectmanager.commands.vc.lavaplayer.MusicPlayer;
-import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.eventlisteners.*;
 import org.smartscholars.projectmanager.service.SchedulerService;
 import javax.security.auth.login.LoginException;
@@ -40,11 +32,7 @@ public class ProjectManager {
         //options
         SchedulerService schedulerService = new SchedulerService(jda);
 
-        PlayerManager playerManager = new PlayerManager();
-
-        MusicPlayer musicPlayer = new MusicPlayer(playerManager);
-
-        CommandManager commandManager = new CommandManager(musicPlayer);
+        CommandManager commandManager = new CommandManager();
         shardManager.addEventListener(commandManager);
         List<IEvent> eventListeners = List.of(
                 new OnReadyListener(commandManager),

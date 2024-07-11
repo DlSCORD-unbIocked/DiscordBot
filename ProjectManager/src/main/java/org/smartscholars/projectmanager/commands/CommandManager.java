@@ -1,6 +1,5 @@
 package org.smartscholars.projectmanager.commands;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -13,8 +12,6 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartscholars.projectmanager.commands.vc.JoinVoiceChannelCommand;
-import org.smartscholars.projectmanager.commands.vc.lavaplayer.MusicPlayer;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -28,10 +25,8 @@ public class CommandManager extends ListenerAdapter {
     private final HashMap<String, ICommand> commandInstances = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
     private static JDA jda;
-    private final MusicPlayer musicPlayer;
 
-    public CommandManager(MusicPlayer musicPlayer) {
-        this.musicPlayer = musicPlayer;
+    public CommandManager() {
         logger.info("Initializing CommandManager");
         loadCommandsFromConfiguration();
     }
@@ -150,15 +145,7 @@ public class CommandManager extends ListenerAdapter {
             return null;
         }
         try {
-            if (JoinVoiceChannelCommand.class.equals(commandClass)) {
-                return commandClass.getDeclaredConstructor(AudioPlayer.class).newInstance(musicPlayer.getAudioPlayer());
-            } else {
-                try {
-                    return commandClass.getDeclaredConstructor(MusicPlayer.class).newInstance(musicPlayer);
-                } catch (NoSuchMethodException e) {
-                    return commandClass.getDeclaredConstructor().newInstance();
-                }
-            }
+            return commandClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.error("Failed to instantiate command: {}", commandName, e);
             return null;
