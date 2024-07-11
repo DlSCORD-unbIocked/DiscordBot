@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager.commands.vc.lavaplayer;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -15,27 +16,31 @@ public class MusicPlayer {
     }
 
     public void play(String trackUrl) {
-    manager.getManager().loadItemOrdered(manager, trackUrl, new AudioLoadResultHandler() {
+        manager.getManager().loadItemOrdered(manager, trackUrl, new AudioLoadResultHandler() {
 
-        @Override
-        public void trackLoaded(AudioTrack track) {
-            manager.getPlayer().playTrack(track);
-        }
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                manager.getPlayer().playTrack(track);
+            }
 
-        @Override
-        public void playlistLoaded(AudioPlaylist playlist) {
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {
 
-        }
+            }
 
-        @Override
-        public void noMatches() {
-            logger.error("No matches found for the URL: {}", trackUrl);
-        }
+            @Override
+            public void noMatches() {
+                logger.error("No matches found for the URL: {}", trackUrl);
+            }
 
-        @Override
-        public void loadFailed(FriendlyException exception) {
-            logger.error("Could not load track: {}", trackUrl, exception);
-        }
-    });
-}
+            @Override
+            public void loadFailed(FriendlyException exception) {
+                logger.error("Could not load track: {}", trackUrl, exception);
+            }
+        });
+    }
+
+    public AudioPlayer getAudioPlayer() {
+        return this.manager.getPlayer(); // Assuming there's an AudioPlayer field named audioPlayer
+    }
 }

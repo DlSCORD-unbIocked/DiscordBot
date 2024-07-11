@@ -66,8 +66,9 @@ public class TextToSpeechCommand implements ICommand {
         String voiceId = event.getOption("voice_id") != null ? Objects.requireNonNull(event.getOption("voice_id")).getAsString() : "zcAOhNBS3c14rBihAFp1";
 
         //generateTTS(message, voiceId);
-        File file = new File(outputPath);
+        File file = new File(outputPath.replace("\\", "/"));
         musicPlayer.play("file://" + file.getAbsolutePath());
+        //musicPlayer.play("https://www.youtube.com/watch?v=AzqTd73CCrA");
 
     }
 
