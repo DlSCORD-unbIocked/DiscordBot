@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager.commands.vc;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.slf4j.Logger;
@@ -43,6 +44,18 @@ public class TextToSpeechCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
+        if (!Objects.requireNonNull(event.getGuild()).getAudioManager().isConnected()) {
+            event.reply("You need to be in a voice channel to use this command").queue();
+            return;
+        }
+        VoiceChannel userVoiceChannel = (VoiceChannel) Objects.requireNonNull(Objects.requireNonNull(event.getMember()).getVoiceState()).getChannel();
+        VoiceChannel botVoiceChannel = (VoiceChannel) event.getGuild().getAudioManager().getConnectedChannel();
+
+        if (userVoiceChannel == null || !userVoiceChannel.equals(botVoiceChannel)) {
+            event.reply("You need to be in the same voice channel as the bot to use this command").queue();
+            return;
+        }
+
         event.deferReply().queue();
         Dotenv dotenv = Dotenv.load();
         String authToken = dotenv.get("SPEECH_TOKEN");
