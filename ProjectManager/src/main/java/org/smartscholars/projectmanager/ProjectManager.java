@@ -1,4 +1,10 @@
 package org.smartscholars.projectmanager;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -13,6 +19,7 @@ import org.smartscholars.projectmanager.eventlisteners.*;
 import org.smartscholars.projectmanager.service.SchedulerService;
 import javax.security.auth.login.LoginException;
 import java.util.List;
+
 public class ProjectManager {
     private final ShardManager shardManager;
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
@@ -20,6 +27,8 @@ public class ProjectManager {
         Dotenv dotenv = Dotenv.load();
         String botToken = dotenv.get("BOT_TOKEN");
         DefaultShardManagerBuilder builder = DefaultShardManagerBuilder.createDefault(botToken);
+        //audio player
+
         builder.setActivity(Activity.playing("with your projects"));
         builder.setStatus(OnlineStatus.ONLINE);
         builder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
