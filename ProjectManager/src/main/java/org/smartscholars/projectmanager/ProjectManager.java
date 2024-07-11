@@ -15,6 +15,8 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandManager;
+import org.smartscholars.projectmanager.commands.vc.lavaplayer.MusicPlayer;
+import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.eventlisteners.*;
 import org.smartscholars.projectmanager.service.SchedulerService;
 import javax.security.auth.login.LoginException;
@@ -37,7 +39,12 @@ public class ProjectManager {
         JDA jda = shardManager.getShards().getFirst();
         //options
         SchedulerService schedulerService = new SchedulerService(jda);
-        CommandManager commandManager = new CommandManager();
+
+        PlayerManager playerManager = new PlayerManager();
+
+        MusicPlayer musicPlayer = new MusicPlayer(playerManager);
+
+        CommandManager commandManager = new CommandManager(musicPlayer);
         shardManager.addEventListener(commandManager);
         List<IEvent> eventListeners = List.of(
                 new OnReadyListener(commandManager),

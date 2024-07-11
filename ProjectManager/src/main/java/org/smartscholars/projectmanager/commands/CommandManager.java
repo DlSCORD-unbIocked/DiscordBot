@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartscholars.projectmanager.commands.vc.lavaplayer.MusicPlayer;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -21,20 +22,15 @@ import java.util.*;
 
 public class CommandManager extends ListenerAdapter {
 
-    private final HashMap<String, Class<? extends ICommand>> commandClasses = new HashMap<>();
+    private static final HashMap<String, Class<? extends ICommand>> commandClasses = new HashMap<>();
     private final HashMap<String, ICommand> commandInstances = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(CommandManager.class);
     private static JDA jda;
+    private final MusicPlayer musicPlayer;
 
-    public CommandManager() {
+    public CommandManager(MusicPlayer musicPlayer) {
+        this.musicPlayer = musicPlayer;
         logger.info("Initializing CommandManager");
-        loadCommandsFromConfiguration();
-    }
-
-    public void reloadCommands() {
-        logger.info("Reloading commands");
-        commandClasses.clear();
-        commandInstances.clear();
         loadCommandsFromConfiguration();
     }
 
@@ -152,8 +148,11 @@ public class CommandManager extends ListenerAdapter {
             return null;
         }
         try {
-            // For all commands with no-argument constructor
-            return commandClass.getDeclaredConstructor().newInstance();
+            try {
+                return commandClass.getDeclaredConstructor(MusicPlayer.class).newInstance(musicPlayer);
+            } catch (NoSuchMethodException e) {
+                return commandClass.getDeclaredConstructor().newInstance();
+            }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             logger.error("Failed to instantiate command: {}", commandName, e);
             return null;
@@ -169,7 +168,7 @@ public class CommandManager extends ListenerAdapter {
     }
 
     public static HashMap<String, Class<? extends ICommand>> getCommandClasses() {
-        return new CommandManager().commandClasses;
+        return new HashMap<>(commandClasses);
     }
 
     public void setJda(JDA jda) {

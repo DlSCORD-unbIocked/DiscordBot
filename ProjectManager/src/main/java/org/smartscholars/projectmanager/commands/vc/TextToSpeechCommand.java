@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
+import org.smartscholars.projectmanager.commands.vc.lavaplayer.MusicPlayer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,9 +39,13 @@ import java.util.Objects;
 )
 public class TextToSpeechCommand implements ICommand {
 
-
     private final Logger logger = LoggerFactory.getLogger(TextToSpeechCommand.class);
     private final String outputPath = "ProjectManager/src/main/resources/tts.mp3";
+    private final MusicPlayer musicPlayer;
+
+    public TextToSpeechCommand(MusicPlayer musicPlayer) {
+        this.musicPlayer = musicPlayer;
+    }
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
@@ -57,11 +62,18 @@ public class TextToSpeechCommand implements ICommand {
         }
 
         event.deferReply().queue();
-        Dotenv dotenv = Dotenv.load();
-        String authToken = dotenv.get("SPEECH_TOKEN");
-
         String message = Objects.requireNonNull(event.getOption("message")).getAsString();
         String voiceId = event.getOption("voice_id") != null ? Objects.requireNonNull(event.getOption("voice_id")).getAsString() : "zcAOhNBS3c14rBihAFp1";
+
+        //generateTTS(message, voiceId);
+        File file = new File(outputPath);
+        musicPlayer.play("file://" + file.getAbsolutePath());
+
+    }
+
+    private void generateTTS(String message, String voiceId) {
+        Dotenv dotenv = Dotenv.load();
+        String authToken = dotenv.get("SPEECH_TOKEN");
 
         String ttsUrl = "https://api.elevenlabs.io/v1/text-to-speech/" + voiceId + "/stream";
 
@@ -88,15 +100,10 @@ public class TextToSpeechCommand implements ICommand {
             }
             catch (Exception e) {
                 logger.error("Error while saving the text-to-speech response to file", e);
-                event.reply("Error while saving the text-to-speech output").queue();
-                return;
             }
-
-            event.getHook().sendMessage("Text-to-speech processing complete. Output saved to " + outputPath).queue();
         }
         catch (Exception e) {
             logger.error("Error while sending request to text-to-speech API", e);
-            event.reply("Error while processing text-to-speech").queue();
         }
     }
 }
