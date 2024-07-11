@@ -14,7 +14,7 @@ public class VoiceChannelUtil {
         GuildVoiceState memberVoiceState = Objects.requireNonNull(member.getVoiceState(), "Member voice state cannot be null");
 
         if (!memberVoiceState.inAudioChannel()) {
-            event.reply("You need to be in a voice channel").queue();
+            event.getHook().sendMessage("You need to be in a voice channel").queue();
             return true;
         }
 
@@ -27,10 +27,17 @@ public class VoiceChannelUtil {
         }
         else {
             if (!Objects.equals(selfVoiceState.getChannel(), memberVoiceState.getChannel())) {
-                event.reply("You need to be in the same channel as me").queue();
+                event.getHook().sendMessage("You need to be in the same channel as me").queue();
                 return true;
             }
         }
         return false;
+    }
+
+    public static boolean verifySelfInVoiceChannel (Member self, SlashCommandInteractionEvent event) {
+        GuildVoiceState selfVoiceState = self.getVoiceState();
+        assert selfVoiceState != null;
+        event.getHook().sendMessage("I am not in a voice channel").queue();
+        return !selfVoiceState.inAudioChannel();
     }
 }

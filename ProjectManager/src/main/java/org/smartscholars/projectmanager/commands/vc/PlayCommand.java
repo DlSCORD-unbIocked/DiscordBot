@@ -32,6 +32,7 @@ public class PlayCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
+        event.deferReply().queue();
         if (VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
             return;
         }
@@ -46,10 +47,12 @@ public class PlayCommand implements ICommand {
 
         PlayerManager playerManager = PlayerManager.get();
         try {
+            event.getHook().sendMessage("Loading track...").queue();
             playerManager.play(event.getGuild(), song, event);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("Error playing song", e);
-            event.reply("Error playing song").queue();
+            event.getHook().sendMessage("Error playing song").queue();
         }
     }
 }

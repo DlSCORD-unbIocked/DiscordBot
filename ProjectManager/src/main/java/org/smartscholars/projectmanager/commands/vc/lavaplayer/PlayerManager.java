@@ -50,11 +50,17 @@ public class PlayerManager {
     public void play(Guild guild, String trackURL, SlashCommandInteractionEvent event) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
+
             @Override
             public void trackLoaded(AudioTrack track) {
+                try {
                 logger.info("Track loaded successfully: {}", track.getInfo().title);
-                event.reply("Track loaded successfully: " + track.getInfo().title).queue();
                 guildMusicManager.getTrackScheduler().queue(track);
+                event.getHook().sendMessage("Track loaded successfully: " + track.getInfo().title).queue();
+                }
+                catch (Exception e) {
+                    logger.error("Error sending track loaded message", e);
+                }
             }
 
             @Override
@@ -65,13 +71,13 @@ public class PlayerManager {
             @Override
             public void noMatches() {
                 logger.warn("No matches found for: {}", trackURL);
-                event.reply("No matches found for: " + trackURL).queue();
+                event.getHook().sendMessage("No matches found for: " + trackURL).queue();
             }
 
             @Override
             public void loadFailed(FriendlyException exception) {
                 logger.error("Could not load track: {}", trackURL, exception);
-                event.reply("Could not load track: " + trackURL).queue();
+                event.getHook().sendMessage("Could not load track: " + trackURL).queue();
             }
         });
     }
