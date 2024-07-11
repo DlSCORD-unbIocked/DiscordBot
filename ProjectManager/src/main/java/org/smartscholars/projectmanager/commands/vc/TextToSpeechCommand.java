@@ -42,7 +42,7 @@ public class TextToSpeechCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        if (!VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
+        if (VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
             return;
         }
 

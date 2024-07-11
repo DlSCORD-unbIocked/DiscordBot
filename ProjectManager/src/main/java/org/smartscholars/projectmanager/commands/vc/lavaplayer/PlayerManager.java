@@ -53,6 +53,7 @@ public class PlayerManager {
             @Override
             public void trackLoaded(AudioTrack track) {
                 logger.info("Track loaded successfully: {}", track.getInfo().title);
+                event.reply("Track loaded successfully: " + track.getInfo().title).queue();
                 guildMusicManager.getTrackScheduler().queue(track);
             }
 

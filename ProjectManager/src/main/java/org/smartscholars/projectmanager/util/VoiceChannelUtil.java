@@ -15,7 +15,7 @@ public class VoiceChannelUtil {
 
         if (!memberVoiceState.inAudioChannel()) {
             event.reply("You need to be in a voice channel").queue();
-            return false;
+            return true;
         }
 
         Member self = Objects.requireNonNull(event.getGuild(), "Guild cannot be null").getSelfMember();
@@ -23,14 +23,14 @@ public class VoiceChannelUtil {
 
         if (!selfVoiceState.inAudioChannel()) {
             event.getGuild().getAudioManager().openAudioConnection(memberVoiceState.getChannel());
-            return true;
+            return false;
         }
         else {
             if (!Objects.equals(selfVoiceState.getChannel(), memberVoiceState.getChannel())) {
                 event.reply("You need to be in the same channel as me").queue();
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 }

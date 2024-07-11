@@ -50,4 +50,8 @@ public class TrackScheduler extends AudioEventAdapter {
     public void setRepeat(boolean repeat) {
         isRepeat = repeat;
     }
+
+    public void clearQueue() {
+        queue.clear();
+    }
 }

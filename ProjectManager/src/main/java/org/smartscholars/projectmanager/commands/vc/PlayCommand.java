@@ -1,7 +1,5 @@
 package org.smartscholars.projectmanager.commands.vc;
 
-import net.dv8tion.jda.api.entities.GuildVoiceState;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.slf4j.Logger;
@@ -13,8 +11,6 @@ import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.util.VoiceChannelUtil;
 
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Objects;
 
@@ -36,7 +32,7 @@ public class PlayCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        if (!VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
+        if (VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
             return;
         }
 
