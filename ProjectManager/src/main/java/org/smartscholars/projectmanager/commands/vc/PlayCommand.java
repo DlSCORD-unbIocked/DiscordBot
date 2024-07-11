@@ -12,8 +12,10 @@ import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.util.VoiceChannelUtil;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Objects;
 
 @CommandInfo(
@@ -40,13 +42,18 @@ public class PlayCommand implements ICommand {
 
         String song = Objects.requireNonNull(event.getOption("song"), "Song option cannot be null").getAsString();
         try {
-            new URI(song);
-        } catch (URISyntaxException e) {
-            song = "ytsearch:" + song;
+            new URL(song);
+        }
+        catch (MalformedURLException e) {
+           song = "ytsearch:" + song;
         }
 
         PlayerManager playerManager = PlayerManager.get();
-        event.reply("Playing").queue();
-        playerManager.play(event.getGuild(), song);
+        try {
+            playerManager.play(event.getGuild(), song, event);
+        } catch (Exception e) {
+            logger.error("Error playing song", e);
+            event.reply("Error playing song").queue();
+        }
     }
 }

@@ -21,15 +21,16 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        if(isRepeat) {
+        if (isRepeat) {
             player.startTrack(track.makeClone(), false);
-        } else {
+        }
+        else {
             player.startTrack(queue.poll(), false);
         }
     }
 
     public void queue(AudioTrack track) {
-        if(!player.startTrack(track, true)) {
+        if (!player.startTrack(track, true)) {
             queue.offer(track);
         }
     }
