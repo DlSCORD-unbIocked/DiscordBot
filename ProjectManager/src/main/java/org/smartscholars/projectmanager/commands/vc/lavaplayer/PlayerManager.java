@@ -10,6 +10,8 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import org.slf4j.Logger;
 
@@ -47,16 +49,15 @@ public class PlayerManager {
         });
     }
 
-    public void play(Guild guild, String trackURL, SlashCommandInteractionEvent event) {
+    public void play(Guild guild, String trackURL, TextChannel channel) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
-
             @Override
             public void trackLoaded(AudioTrack track) {
                 try {
-                logger.info("Track loaded successfully: {}", track.getInfo().title);
-                guildMusicManager.getTrackScheduler().queue(track);
-                event.getHook().sendMessage("Track loaded successfully: " + track.getInfo().title).queue();
+                    logger.info("Track loaded successfully: {}", track.getInfo().title);
+                    guildMusicManager.getTrackScheduler().queue(track);
+                    channel.sendMessage("Track loaded successfully: " + track.getInfo().title).queue();
                 }
                 catch (Exception e) {
                     logger.error("Error sending track loaded message", e);
@@ -71,13 +72,13 @@ public class PlayerManager {
             @Override
             public void noMatches() {
                 logger.warn("No matches found for: {}", trackURL);
-                event.getHook().sendMessage("No matches found for: " + trackURL).queue();
+                channel.sendMessage("No matches found for: " + trackURL).queue();
             }
 
             @Override
             public void loadFailed(FriendlyException exception) {
                 logger.error("Could not load track: {}", trackURL, exception);
-                event.getHook().sendMessage("Could not load track: " + trackURL).queue();
+                channel.sendMessage("Could not load track: " + trackURL).queue();
             }
         });
     }

@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager.commands.vc;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.slf4j.Logger;
@@ -8,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
-import org.smartscholars.projectmanager.util.VoiceChannelUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Objects;
 
 @CommandInfo(name = "text-to-speech",
         description = "Converts text to speech in vc (make sure you are in vc)",
@@ -42,7 +43,15 @@ public class TextToSpeechCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        if (VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) {
+        if (!Objects.requireNonNull(event.getGuild()).getAudioManager().isConnected()) {
+            event.reply("You need to be in a voice channel to use this command").queue();
+            return;
+        }
+        VoiceChannel userVoiceChannel = (VoiceChannel) Objects.requireNonNull(Objects.requireNonNull(event.getMember()).getVoiceState()).getChannel();
+        VoiceChannel botVoiceChannel = (VoiceChannel) event.getGuild().getAudioManager().getConnectedChannel();
+
+        if (userVoiceChannel == null || !userVoiceChannel.equals(botVoiceChannel)) {
+            event.reply("You need to be in the same voice channel as the bot to use this command").queue();
             return;
         }
 

@@ -1,5 +1,6 @@
 package org.smartscholars.projectmanager.commands.vc;
 
+import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import org.slf4j.Logger;
@@ -9,7 +10,6 @@ import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.GuildMusicManager;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.TrackScheduler;
-import org.smartscholars.projectmanager.util.VoiceChannelUtil;
 
 import java.util.Objects;
 
@@ -23,16 +23,34 @@ public class StopCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        event.deferReply().queue();
+        Member member = event.getMember();
+        assert member != null;
+        GuildVoiceState memberVoiceState = member.getVoiceState();
+
+        assert memberVoiceState != null;
+        if(!memberVoiceState.inAudioChannel()) {
+            event.reply("You need to be in a voice channel").queue();
+            return;
+        }
+
         Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
-        if (VoiceChannelUtil.verifySelfInVoiceChannel(self, event)) return;
-        if (VoiceChannelUtil.ensureMemberAndBotInSameChannel(event, logger)) return;
+        GuildVoiceState selfVoiceState = self.getVoiceState();
+
+        assert selfVoiceState != null;
+        if(!selfVoiceState.inAudioChannel()) {
+            event.reply("I am not in an audio channel").queue();
+            return;
+        }
+
+        if(selfVoiceState.getChannel() != memberVoiceState.getChannel()) {
+            event.reply("You are not in the same channel as me").queue();
+            return;
+        }
 
         GuildMusicManager guildMusicManager = PlayerManager.get().getGuildMusicManager(event.getGuild());
         TrackScheduler trackScheduler = guildMusicManager.getTrackScheduler();
         trackScheduler.getQueue().clear();
         trackScheduler.getPlayer().stopTrack();
-
-        event.getHook().sendMessage("Stopped and cleared queue").queue();
+        event.reply("Stopped").queue();
     }
 }
