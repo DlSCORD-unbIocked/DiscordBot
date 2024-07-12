@@ -47,6 +47,7 @@ public class PlayerManager {
     }
 
     public void loadAndPlay(Guild guild, String trackURL, TextChannel channel) {
+
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
             @Override
@@ -63,6 +64,8 @@ public class PlayerManager {
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
+                logger.info("Playlist loaded successfully: {}", playlist.getName());
+                channel.sendMessage("Playlist loaded successfully: " + playlist.getTracks().getFirst().getInfo().title).queue();
                 guildMusicManager.getTrackScheduler().queue(playlist.getTracks().getFirst());
             }
 
