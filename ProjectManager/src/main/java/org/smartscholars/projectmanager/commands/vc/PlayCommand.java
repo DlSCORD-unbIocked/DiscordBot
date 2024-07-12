@@ -69,7 +69,7 @@ public class PlayCommand implements ICommand {
         PlayerManager playerManager = PlayerManager.get();
         try {
             event.getHook().sendMessage("Loading track...").queue();
-            playerManager.play(event.getGuild(), song, event.getChannel().asTextChannel());
+            playerManager.loadAndPlay(event.getGuild(), song, event.getChannel().asTextChannel());
         }
         catch (Exception e) {
             logger.error("Error playing song", e);

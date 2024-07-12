@@ -11,15 +11,15 @@ public class GuildMusicManager {
     public GuildMusicManager(AudioPlayerManager manager, Guild guild) {
         AudioPlayer player = manager.createPlayer();
         trackScheduler = new TrackScheduler(player);
-        player.addListener(trackScheduler);
         lavaPlayerAudioProvider = new LavaPlayerAudioProvider(player, guild);
+        player.addListener(trackScheduler);
     }
 
     public TrackScheduler getTrackScheduler() {
         return trackScheduler;
     }
 
-    public LavaPlayerAudioProvider getAudioForwarder() {
+    public LavaPlayerAudioProvider getLavaPlayerAudioProvider() {
         return lavaPlayerAudioProvider;
     }
 }

@@ -43,6 +43,6 @@ public class ResumeCommand implements ICommand {
 
         GuildMusicManager guildMusicManager = PlayerManager.get().getGuildMusicManager(event.getGuild());
         guildMusicManager.getTrackScheduler().getPlayer().setPaused(false);
-        event.reply("Paused").queue();
+        event.reply("Resumed").queue();
     }
 }

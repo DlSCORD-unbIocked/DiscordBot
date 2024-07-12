@@ -6,6 +6,8 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -13,7 +15,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
     private final AudioPlayer player;
     private final BlockingQueue<AudioTrack> queue = new LinkedBlockingQueue<>();
-    private boolean isRepeat = false;
+    AudioTrack lastTrack;
+    private boolean repeating = false;
 
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
@@ -21,11 +24,14 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        if (isRepeat) {
-            player.startTrack(track.makeClone(), false);
-        }
-        else {
-            player.startTrack(queue.poll(), false);
+        this.lastTrack = track;
+        // Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
+        if (endReason.mayStartNext)
+        {
+            if (repeating)
+                player.startTrack(lastTrack.makeClone(), false);
+            else
+                nextTrack();
         }
     }
 
@@ -33,6 +39,10 @@ public class TrackScheduler extends AudioEventAdapter {
         if (!player.startTrack(track, true)) {
             queue.offer(track);
         }
+    }
+
+    public void nextTrack() {
+        player.startTrack(queue.poll(), false);
     }
 
     public AudioPlayer getPlayer() {
@@ -43,15 +53,19 @@ public class TrackScheduler extends AudioEventAdapter {
         return queue;
     }
 
-    public boolean isRepeat() {
-        return isRepeat;
+    public boolean isRepeating() {
+        return repeating;
     }
 
-    public void setRepeat(boolean repeat) {
-        isRepeat = repeat;
+    public void setRepeating(boolean repeating) {
+        this.repeating = repeating;
     }
 
     public void clearQueue() {
         queue.clear();
+    }
+
+    public void shuffle() {
+        Collections.shuffle((List<?>) queue);
     }
 }
