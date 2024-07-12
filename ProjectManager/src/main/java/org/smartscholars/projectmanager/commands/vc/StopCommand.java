@@ -23,34 +23,47 @@ public class StopCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        Member member = event.getMember();
-        assert member != null;
-        GuildVoiceState memberVoiceState = member.getVoiceState();
+        try {
+            Member member = event.getMember();
+            assert member != null;
+            GuildVoiceState memberVoiceState = member.getVoiceState();
 
-        assert memberVoiceState != null;
-        if(!memberVoiceState.inAudioChannel()) {
-            event.reply("You need to be in a voice channel").queue();
+            assert memberVoiceState != null;
+            if(!memberVoiceState.inAudioChannel()) {
+                event.reply("You need to be in a voice channel").queue();
+                return;
+            }
+
+            Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
+            GuildVoiceState selfVoiceState = self.getVoiceState();
+
+            assert selfVoiceState != null;
+            if(!selfVoiceState.inAudioChannel()) {
+                event.reply("I am not in an audio channel").queue();
+                return;
+            }
+
+            if (selfVoiceState.getChannel() != memberVoiceState.getChannel()) {
+                event.reply("You are not in the same channel as me").queue();
+                return;
+            }
+        }
+        catch (Exception e) {
+            logger.error("Error checking voice channel", e);
+            event.reply("Error checking voice channel").queue();
             return;
         }
 
-        Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
-        GuildVoiceState selfVoiceState = self.getVoiceState();
-
-        assert selfVoiceState != null;
-        if(!selfVoiceState.inAudioChannel()) {
-            event.reply("I am not in an audio channel").queue();
-            return;
+        try {
+            GuildMusicManager guildMusicManager = PlayerManager.get().getGuildMusicManager(event.getGuild());
+            TrackScheduler trackScheduler = guildMusicManager.getTrackScheduler();
+            trackScheduler.clearQueue();
+            trackScheduler.getPlayer().stopTrack();
+            event.reply("Stopped the track and cleared the queue").queue();
         }
-
-        if(selfVoiceState.getChannel() != memberVoiceState.getChannel()) {
-            event.reply("You are not in the same channel as me").queue();
-            return;
+        catch (Exception e) {
+            logger.error("Error stopping the track", e);
+            event.reply("Error stopping the track").queue();
         }
-
-        GuildMusicManager guildMusicManager = PlayerManager.get().getGuildMusicManager(event.getGuild());
-        TrackScheduler trackScheduler = guildMusicManager.getTrackScheduler();
-        trackScheduler.clearQueue();
-        trackScheduler.getPlayer().stopTrack();
-        event.reply("Stopped").queue();
     }
 }

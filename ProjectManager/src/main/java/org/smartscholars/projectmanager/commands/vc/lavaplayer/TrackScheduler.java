@@ -25,9 +25,7 @@ public class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         this.lastTrack = track;
-        // Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
-        if (endReason.mayStartNext)
-        {
+        if (endReason.mayStartNext) {
             if (repeating)
                 player.startTrack(lastTrack.makeClone(), false);
             else

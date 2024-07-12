@@ -63,7 +63,7 @@ public class PlayerManager {
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                guildMusicManager.getTrackScheduler().queue(playlist.getTracks().get(0));
+                guildMusicManager.getTrackScheduler().queue(playlist.getTracks().getFirst());
             }
 
             @Override
