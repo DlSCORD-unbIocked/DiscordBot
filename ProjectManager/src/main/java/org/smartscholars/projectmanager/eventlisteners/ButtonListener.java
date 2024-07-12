@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.jetbrains.annotations.NotNull;
 import org.smartscholars.projectmanager.commands.api.ImageOptionsCommand;
 import org.smartscholars.projectmanager.commands.api.VoiceIdOptionsCommand;
+import org.smartscholars.projectmanager.commands.misc.RockPaperScissorsCommand;
 
 import java.util.Objects;
 
@@ -88,6 +89,11 @@ public class ButtonListener extends ListenerAdapter implements IEvent {
             if (embed != null) {
                 event.getHook().editOriginalEmbeds(embed.build()).setComponents(ActionRow.of(linkButton), ActionRow.of(prevButton, nextButton)).queue();
             }
+        }
+        if (event.getComponentId().equals("rock") || event.getComponentId().equals("paper") || event.getComponentId().equals("scissors")) {
+            RockPaperScissorsCommand command = new RockPaperScissorsCommand();
+            command.handleButtonInteraction(event.getComponentId(), event);
+            event.deferEdit().queue();
         }
     }
 }
