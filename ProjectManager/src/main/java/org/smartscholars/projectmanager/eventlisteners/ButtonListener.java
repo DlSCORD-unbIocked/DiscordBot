@@ -9,10 +9,9 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.jetbrains.annotations.NotNull;
-import org.smartscholars.projectmanager.commands.misc.ImageOptionsCommand;
-import org.smartscholars.projectmanager.commands.vc.VoiceIdOptionsCommand;
+import org.smartscholars.projectmanager.commands.api.ImageOptionsCommand;
+import org.smartscholars.projectmanager.commands.api.VoiceIdOptionsCommand;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class ButtonListener extends ListenerAdapter implements IEvent {

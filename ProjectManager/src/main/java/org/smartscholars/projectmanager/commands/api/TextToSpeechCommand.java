@@ -1,4 +1,4 @@
-package org.smartscholars.projectmanager.commands.vc;
+package org.smartscholars.projectmanager.commands.api;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;

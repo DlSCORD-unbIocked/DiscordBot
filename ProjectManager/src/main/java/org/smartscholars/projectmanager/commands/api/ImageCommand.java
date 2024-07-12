@@ -1,4 +1,4 @@
-package org.smartscholars.projectmanager.commands.misc;
+package org.smartscholars.projectmanager.commands.api;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;

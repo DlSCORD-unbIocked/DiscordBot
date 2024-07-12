@@ -1,6 +1,5 @@
 package org.smartscholars.projectmanager.commands.administrator;
 
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.slf4j.Logger;
@@ -10,9 +9,6 @@ import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.Permission;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

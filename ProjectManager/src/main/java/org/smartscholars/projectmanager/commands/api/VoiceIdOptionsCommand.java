@@ -1,4 +1,4 @@
-package org.smartscholars.projectmanager.commands.vc;
+package org.smartscholars.projectmanager.commands.api;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

@@ -1,4 +1,4 @@
-package org.smartscholars.projectmanager.commands.misc;
+package org.smartscholars.projectmanager.commands.api;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
+import org.smartscholars.projectmanager.commands.misc.HelpCommand;
 import org.smartscholars.projectmanager.util.ListUtils;
 
 import java.awt.*;
