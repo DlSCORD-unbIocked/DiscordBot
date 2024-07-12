@@ -11,7 +11,9 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 
+import javax.sound.midi.Track;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PlayerManager {
@@ -46,7 +48,7 @@ public class PlayerManager {
         });
     }
 
-    public void loadAndPlay(Guild guild, String trackURL, TextChannel channel) {
+    public void loadAndPlay(Guild guild, String trackURL, TextChannel channel, boolean addPlaylist) {
 
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
@@ -64,9 +66,17 @@ public class PlayerManager {
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                logger.info("Playlist loaded successfully: {}", playlist.getName());
-                channel.sendMessage("Playlist loaded successfully: " + playlist.getTracks().getFirst().getInfo().title).queue();
-                guildMusicManager.getTrackScheduler().queue(playlist.getTracks().getFirst());
+                List<AudioTrack> tracks = playlist.getTracks();
+                if (addPlaylist) {
+                    logger.info("Playlist loaded successfully: {}", playlist.getName());
+                    channel.sendMessage("Adding **" + playlist.getTracks().size() +"** tracks to queue from playlist: " + playlist.getName()).queue();
+                    tracks.forEach(guildMusicManager.getTrackScheduler()::queue);
+                }
+                else {
+                    logger.info("Track loaded successfully: {}", playlist.getTracks().getFirst().getInfo().title);
+                    channel.sendMessage("Playlist loaded successfully: " + playlist.getTracks().getFirst().getInfo().title).queue();
+                    guildMusicManager.getTrackScheduler().queue(playlist.getTracks().getFirst());
+                }
             }
 
             @Override

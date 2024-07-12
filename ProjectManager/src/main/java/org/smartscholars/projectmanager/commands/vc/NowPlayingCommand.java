@@ -48,6 +48,14 @@ public class NowPlayingCommand implements ICommand {
             event.reply("No track is currently playing").queue();
             return;
         }
-        event.reply("`Currently playing: " + track.getInfo().title + " by " + track.getInfo().author + "`").queue();
+        long length = track.getInfo().length;
+        long totalSeconds = length / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        String formattedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+
+        event.reply("`Currently playing: " + track.getInfo().title + "\nLength: " + formattedTime + "`").queue();
     }
 }

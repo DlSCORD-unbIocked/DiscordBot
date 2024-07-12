@@ -47,7 +47,7 @@ public class SkipCommand implements ICommand {
         }
 
         GuildMusicManager guildMusicManager = PlayerManager.get().getGuildMusicManager(event.getGuild());
-        guildMusicManager.getTrackScheduler().getPlayer().stopTrack();
-        event.reply("Skipped").queue();
+        guildMusicManager.getTrackScheduler().nextTrack();
+        event.reply("Skipped current song").queue();
     }
 }

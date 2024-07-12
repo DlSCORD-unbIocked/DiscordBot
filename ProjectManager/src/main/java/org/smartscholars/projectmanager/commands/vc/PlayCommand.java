@@ -13,6 +13,7 @@ import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Objects;
 
 @CommandInfo(
@@ -24,6 +25,12 @@ import java.util.Objects;
             description = "The song you want to play",
             type = OptionType.STRING,
             required = true
+        ),
+        @CommandOption(
+                name = "addplaylist",
+                description = "If true add the playlist to the queue",
+                type = OptionType.BOOLEAN,
+                required = false
         )
     }
 )
@@ -59,6 +66,14 @@ public class PlayCommand implements ICommand {
         }
 
         String song = Objects.requireNonNull(event.getOption("song"), "Song option cannot be null").getAsString();
+        boolean addPlaylist;
+        if (event.getOption("addplaylist") == null) {
+            addPlaylist = false;
+        }
+        else {
+            addPlaylist = Objects.requireNonNull(event.getOption("addplaylist")).getAsBoolean();
+        }
+
         try {
             new URL(song);
         }
@@ -69,7 +84,7 @@ public class PlayCommand implements ICommand {
         PlayerManager playerManager = PlayerManager.get();
         try {
             event.getHook().sendMessage("Loading track...").queue();
-            playerManager.loadAndPlay(event.getGuild(), song, event.getChannel().asTextChannel());
+            playerManager.loadAndPlay(event.getGuild(), song, event.getChannel().asTextChannel(), addPlaylist);
         }
         catch (Exception e) {
             logger.error("Error playing song", e);
