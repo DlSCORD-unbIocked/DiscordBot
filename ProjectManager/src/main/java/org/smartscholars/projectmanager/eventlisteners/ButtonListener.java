@@ -14,9 +14,15 @@ import org.smartscholars.projectmanager.commands.api.VoiceIdOptionsCommand;
 import org.smartscholars.projectmanager.commands.misc.RockPaperScissorsCommand;
 import org.smartscholars.projectmanager.commands.vc.ListQueueCommand;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class ButtonListener extends ListenerAdapter implements IEvent {
+
+    private final Map<String, String> messageIdToUserIdMap = new HashMap<>();
+    private static ButtonListener instance;
+    public ButtonListener() {}
 
     @Override
     public void execute(GenericEvent event) {
@@ -25,6 +31,11 @@ public class ButtonListener extends ListenerAdapter implements IEvent {
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+        String userId = messageIdToUserIdMap.get(event.getMessageId());
+        if (userId == null || !userId.equals(event.getUser().getId())) {
+            event.reply("You are not allowed to interact with this button.").setEphemeral(true).queue();
+            return;
+        }
         //button handling for ImageOptionsCommand
         if (event.getComponentId().equals("left_image") || event.getComponentId().equals("right_image")) {
             event.deferEdit().queue();
@@ -139,4 +150,16 @@ public class ButtonListener extends ListenerAdapter implements IEvent {
             event.deferEdit().queue();
         }
     }
+
+    public Map<String, String> getMessageIdToUserIdMap() {
+        return messageIdToUserIdMap;
+    }
+
+    public static synchronized ButtonListener getInstance() {
+        if (instance == null) {
+            instance = new ButtonListener();
+        }
+        return instance;
+    }
+
 }

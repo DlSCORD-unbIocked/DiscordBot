@@ -13,6 +13,7 @@ import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
+import org.smartscholars.projectmanager.eventlisteners.ButtonListener;
 import org.smartscholars.projectmanager.util.ListUtils;
 import org.smartscholars.projectmanager.util.VcUtil;
 
@@ -91,7 +92,16 @@ public class ListQueueCommand implements ICommand {
         prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
         nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
 
-        event.replyEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue();
+        event.replyEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue(message -> {
+            // Assuming 'member' is the Member object of the user who initiated the command
+            String userId = member.getId();
+            String messageId = message.getId();
+
+            // Access the ButtonListener instance and update the map
+            // This assumes you have a way to access the ButtonListener instance. If not, you might need to make it accessible or manage the map in a shared location.
+            ButtonListener buttonListener = ButtonListener.getInstance();
+            buttonListener.getMessageIdToUserIdMap().put(messageId, userId);
+        });
     }
 
    public List<Map.Entry<String, String>> convertQueueToListOfNamesAndTimes(BlockingQueue<AudioTrack> queue) {
