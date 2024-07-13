@@ -10,6 +10,7 @@ import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.GuildMusicManager;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.TrackScheduler;
+import org.smartscholars.projectmanager.util.VcUtil;
 
 import java.util.Objects;
 
@@ -23,34 +24,23 @@ public class StopCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        try {
-            Member member = event.getMember();
-            assert member != null;
-            GuildVoiceState memberVoiceState = member.getVoiceState();
+        Member member = event.getMember();
+        assert member != null;
 
-            assert memberVoiceState != null;
-            if(!memberVoiceState.inAudioChannel()) {
-                event.reply("You need to be in a voice channel").queue();
-                return;
-            }
-
-            Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
-            GuildVoiceState selfVoiceState = self.getVoiceState();
-
-            assert selfVoiceState != null;
-            if(!selfVoiceState.inAudioChannel()) {
-                event.reply("I am not in an audio channel").queue();
-                return;
-            }
-
-            if (selfVoiceState.getChannel() != memberVoiceState.getChannel()) {
-                event.reply("You are not in the same channel as me").queue();
-                return;
-            }
+        if(!VcUtil.isMemberInVoiceChannel(member)) {
+            event.reply("You need to be in a voice channel").queue();
+            return;
         }
-        catch (Exception e) {
-            logger.error("Error checking voice channel", e);
-            event.reply("Error checking voice channel").queue();
+
+        Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
+
+        if(!VcUtil.isSelfInVoiceChannel(self)) {
+            event.reply("I am not in an audio channel").queue();
+            return;
+        }
+
+        if(!VcUtil.isMemberInSameVoiceChannel(member, self)) {
+            event.reply("You are not in the same channel as me").queue();
             return;
         }
 

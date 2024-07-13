@@ -71,7 +71,7 @@ public class PlayerManager {
                 }
                 else {
                     logger.info("Track loaded successfully: {}", playlist.getTracks().getFirst().getInfo().title);
-                    channel.sendMessage("Playlist loaded successfully: " + playlist.getTracks().getFirst().getInfo().title).queue();
+                    channel.sendMessage("`Track loaded successfully: " + playlist.getTracks().getFirst().getInfo().title + "`").queue();
                     guildMusicManager.getTrackScheduler().queue(playlist.getTracks().getFirst());
                 }
             }

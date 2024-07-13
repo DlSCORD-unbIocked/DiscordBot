@@ -2,6 +2,7 @@ package org.smartscholars.projectmanager.util;
 
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
 public class VcUtil {
     public static boolean isMemberInVoiceChannel(Member member) {

@@ -10,6 +10,7 @@ import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
+import org.smartscholars.projectmanager.util.VcUtil;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -44,41 +45,30 @@ public class PlayCommand implements ICommand {
 
         Member member = event.getMember();
         assert member != null;
-        GuildVoiceState memberVoiceState = member.getVoiceState();
 
-        assert memberVoiceState != null;
-        if(!memberVoiceState.inAudioChannel()) {
+        if(!VcUtil.isMemberInVoiceChannel(member)) {
             event.getHook().sendMessage("`You need to be in a voice channel`").queue();
             return;
         }
 
         Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
-        GuildVoiceState selfVoiceState = self.getVoiceState();
 
-        assert selfVoiceState != null;
-        if(!selfVoiceState.inAudioChannel()) {
-            event.getGuild().getAudioManager().openAudioConnection(memberVoiceState.getChannel());
-        } else {
-            if(selfVoiceState.getChannel() != memberVoiceState.getChannel()) {
-                event.getHook().sendMessage("`You need to be in the same channel as me`8u").queue();
-                return;
-            }
+        if(!VcUtil.isSelfInVoiceChannel(self)) {
+            event.getGuild().getAudioManager().openAudioConnection(member.getVoiceState().getChannel());
+        }
+        else if(!VcUtil.isMemberInSameVoiceChannel(member, self)) {
+            event.getHook().sendMessage("`You need to be in the same channel as me`").queue();
+            return;
         }
 
         String song = Objects.requireNonNull(event.getOption("song"), "Song option cannot be null").getAsString();
-        boolean addPlaylist;
-        if (event.getOption("addplaylist") == null) {
-            addPlaylist = false;
-        }
-        else {
-            addPlaylist = Objects.requireNonNull(event.getOption("addplaylist")).getAsBoolean();
-        }
+        boolean addPlaylist = event.getOption("addplaylist") != null && Objects.requireNonNull(event.getOption("addplaylist")).getAsBoolean();
         logger.info(addPlaylist ? "Adding playlist" : "Not adding playlist");
         try {
             new URL(song);
         }
         catch (MalformedURLException e) {
-           song = "ytsearch:" + song;
+            song = "ytsearch:" + song;
         }
 
         PlayerManager playerManager = PlayerManager.get();
