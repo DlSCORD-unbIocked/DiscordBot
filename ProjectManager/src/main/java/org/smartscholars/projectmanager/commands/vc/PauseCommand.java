@@ -45,6 +45,5 @@ public class PauseCommand implements ICommand {
         guildMusicManager.getTrackScheduler().getPlayer().setPaused(true);
         event.reply("Paused").queue();
 
-
     }
 }

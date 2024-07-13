@@ -11,7 +11,6 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 
-import javax.sound.midi.Track;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +40,7 @@ public class PlayerManager {
     public GuildMusicManager getGuildMusicManager(Guild guild) {
         return guildMusicManagers.computeIfAbsent(guild.getIdLong(), (guildId) -> {
             GuildMusicManager musicManager = new GuildMusicManager(audioPlayerManager, guild);
-
             guild.getAudioManager().setSendingHandler(musicManager.getLavaPlayerAudioProvider());
-
             return musicManager;
         });
     }
@@ -57,7 +54,7 @@ public class PlayerManager {
                 try {
                     logger.info("Track loaded successfully: {}", track.getInfo().title);
                     guildMusicManager.getTrackScheduler().queue(track);
-                    channel.sendMessage("Track loaded successfully: " + track.getInfo().title).queue();
+                    channel.sendMessage("`Track loaded successfully: {}`" + track.getInfo().title).queue();
                 }
                 catch (Exception e) {
                     logger.error("Error sending track loaded message", e);
@@ -68,7 +65,7 @@ public class PlayerManager {
             public void playlistLoaded(AudioPlaylist playlist) {
                 List<AudioTrack> tracks = playlist.getTracks();
                 if (addPlaylist) {
-                    logger.info("Playlist loaded successfully: {}", playlist.getName());
+                    logger.info("`Playlist loaded successfully: {}`", playlist.getName());
                     channel.sendMessage("Adding **" + playlist.getTracks().size() +"** tracks to queue from playlist: " + playlist.getName()).queue();
                     tracks.forEach(guildMusicManager.getTrackScheduler()::queue);
                 }

@@ -48,7 +48,7 @@ public class PlayCommand implements ICommand {
 
         assert memberVoiceState != null;
         if(!memberVoiceState.inAudioChannel()) {
-            event.getHook().sendMessage("You need to be in a voice channel").queue();
+            event.getHook().sendMessage("`You need to be in a voice channel`").queue();
             return;
         }
 
@@ -60,7 +60,7 @@ public class PlayCommand implements ICommand {
             event.getGuild().getAudioManager().openAudioConnection(memberVoiceState.getChannel());
         } else {
             if(selfVoiceState.getChannel() != memberVoiceState.getChannel()) {
-                event.getHook().sendMessage("You need to be in the same channel as me").queue();
+                event.getHook().sendMessage("`You need to be in the same channel as me`8u").queue();
                 return;
             }
         }
@@ -73,7 +73,7 @@ public class PlayCommand implements ICommand {
         else {
             addPlaylist = Objects.requireNonNull(event.getOption("addplaylist")).getAsBoolean();
         }
-
+        logger.info(addPlaylist ? "Adding playlist" : "Not adding playlist");
         try {
             new URL(song);
         }
@@ -83,7 +83,7 @@ public class PlayCommand implements ICommand {
 
         PlayerManager playerManager = PlayerManager.get();
         try {
-            event.getHook().sendMessage("Loading track...").queue();
+            event.getHook().sendMessage("`Loading track...`").queue();
             playerManager.loadAndPlay(event.getGuild(), song, event.getChannel().asTextChannel(), addPlaylist);
         }
         catch (Exception e) {

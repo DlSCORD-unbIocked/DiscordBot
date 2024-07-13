@@ -7,9 +7,10 @@ import net.dv8tion.jda.api.entities.Guild;
 public class GuildMusicManager {
     private final TrackScheduler trackScheduler;
     private final LavaPlayerAudioProvider lavaPlayerAudioProvider;
+    private static AudioPlayer player;
 
     public GuildMusicManager(AudioPlayerManager manager, Guild guild) {
-        AudioPlayer player = manager.createPlayer();
+        player = manager.createPlayer();
         trackScheduler = new TrackScheduler(player);
         lavaPlayerAudioProvider = new LavaPlayerAudioProvider(player, guild);
         player.addListener(trackScheduler);
@@ -21,5 +22,9 @@ public class GuildMusicManager {
 
     public LavaPlayerAudioProvider getLavaPlayerAudioProvider() {
         return lavaPlayerAudioProvider;
+    }
+
+    public void setVolume(int volume) {
+        player.setVolume(volume);
     }
 }
