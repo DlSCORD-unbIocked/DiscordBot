@@ -1,29 +1,45 @@
 package org.smartscholars.projectmanager.commands.vc;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.smartscholars.projectmanager.commands.CommandInfo;
+import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.util.ListUtils;
 import org.smartscholars.projectmanager.util.VcUtil;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 @CommandInfo(
     name = "listqueue",
-    description = "List the songs in the queue"
+    description = "List the songs in the queue",
+    options = {
+        @CommandOption(
+            name = "page",
+            description = "The page number",
+            type = OptionType.INTEGER,
+            required = false
+        )
+    }
 )
 
 public class ListQueueCommand implements ICommand {
 
     private static final int TRACKS_PER_PAGE = 10;
     public static List<List<Map.Entry<String, String>>> pages;
-    public static List<Map<String, String>> tracksInfo;
+    public static List<Map.Entry<String, String>> tracksInfo;
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
@@ -47,38 +63,45 @@ public class ListQueueCommand implements ICommand {
             return;
         }
 
+        tracksInfo = new ArrayList<>();
+        pages = new ArrayList<>();
         BlockingQueue<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getQueue();
-        tracksInfo = convertQueueToListOfNamesAndTimes(queue);
-        //pages = ListUtils.partition(tracksInfo, TRACKS_PER_PAGE);
-
 
         if (queue.isEmpty()) {
-            event.reply("The queue is empty").queue();
+            event.reply("**`The queue is empty`**").queue();
         }
-        else {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Queue:\n");
-            int i = 1;
-            for (AudioTrack track : queue) {
-                sb.append(i).append(". ").append(track.getInfo().title).append("\n");
-                i++;
-            }
-            event.reply(sb.toString()).queue();
-        }
+
+        tracksInfo = convertQueueToListOfNamesAndTimes(queue);
+
+        int currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
+        int totalSize = tracksInfo.size();
+        boolean isFirstPage = currentPage == 1;
+        boolean isLastPage = currentPage >= (totalSize + TRACKS_PER_PAGE - 1) / TRACKS_PER_PAGE;
+
+        pages = ListUtils.partition(tracksInfo, TRACKS_PER_PAGE);
+
+        if (currentPage > pages.size()) currentPage = pages.size();
+        if (currentPage < 1) currentPage = 1;
+
+        EmbedBuilder embed = buildPageEmbed(pages.get(currentPage - 1), currentPage, pages.size());
+
+        Button prevButton = Button.of(ButtonStyle.PRIMARY,"prev_queue_page", Emoji.fromUnicode("◀"));
+        Button nextButton = Button.of(ButtonStyle.PRIMARY,"next_queue_page", Emoji.fromUnicode("▶"));
+
+        prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
+        nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
+
+        event.replyEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue();
     }
 
-    public List<Map<String, String>> convertQueueToListOfNamesAndTimes(BlockingQueue<AudioTrack> queue) {
-        List<Map<String, String>> tracksInfo = new ArrayList<>();
+   public List<Map.Entry<String, String>> convertQueueToListOfNamesAndTimes(BlockingQueue<AudioTrack> queue) {
+        List<Map.Entry<String, String>> tracksInfo = new ArrayList<>();
 
         for (AudioTrack track : queue) {
-            Map<String, String> trackInfo = new HashMap<>();
             String name = track.getInfo().title;
             String time = formatDuration(track.getDuration());
 
-            trackInfo.put("name", name);
-            trackInfo.put("time", time);
-
-            tracksInfo.add(trackInfo);
+            tracksInfo.add(new AbstractMap.SimpleEntry<>(name, time));
         }
 
         return tracksInfo;
@@ -93,5 +116,14 @@ public class ListQueueCommand implements ICommand {
         } else {
             return String.format("%02d:%02d", minutes, seconds);
         }
+    }
+
+    public static EmbedBuilder buildPageEmbed(List<Map.Entry<String, String>> commands, int current, int totalPages) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle("Current Music Queue");
+        embed.setDescription("Page " + current + " of " + totalPages);
+        embed.setColor(new Color(0x1F8B4C));
+        commands.forEach(entry -> embed.addField(entry.getValue(), entry.getKey(), false));
+        return embed;
     }
 }

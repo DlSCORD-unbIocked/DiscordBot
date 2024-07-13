@@ -65,7 +65,7 @@ public class PlayerManager {
             public void playlistLoaded(AudioPlaylist playlist) {
                 List<AudioTrack> tracks = playlist.getTracks();
                 if (addPlaylist) {
-                    logger.info("`Playlist loaded successfully: {}`", playlist.getName());
+                    logger.info("Playlist loaded successfully: {}", playlist.getName());
                     channel.sendMessage("Adding **" + playlist.getTracks().size() +"** tracks to queue from playlist: " + playlist.getName()).queue();
                     tracks.forEach(guildMusicManager.getTrackScheduler()::queue);
                 }

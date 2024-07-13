@@ -2,6 +2,7 @@ package org.smartscholars.projectmanager.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ListUtils {
     public static <T> List<List<T>> partition(List<T> list, int size) {
@@ -14,4 +15,5 @@ public class ListUtils {
         }
         return partitions;
     }
+
 }
