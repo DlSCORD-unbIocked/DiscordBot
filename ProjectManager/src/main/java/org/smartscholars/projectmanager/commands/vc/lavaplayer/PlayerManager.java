@@ -21,6 +21,7 @@ public class PlayerManager {
     private final Map<Long, GuildMusicManager> guildMusicManagers = new HashMap<>();
     private final AudioPlayerManager audioPlayerManager;
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(PlayerManager.class);
+    public static boolean isPlaying = false;
 
     private PlayerManager() {
         audioPlayerManager = new DefaultAudioPlayerManager();
@@ -36,6 +37,22 @@ public class PlayerManager {
             INSTANCE = new PlayerManager();
         }
         return INSTANCE;
+    }
+
+    public synchronized boolean tryPlaying() {
+        if (!isPlaying) {
+            isPlaying = true;
+            return true;
+        }
+        return false;
+    }
+
+    public static synchronized void setPlaying(boolean playing) {
+        isPlaying = playing;
+    }
+
+    public synchronized void finishPlaying() {
+        isPlaying = false;
     }
 
     public GuildMusicManager getGuildMusicManager(Guild guild) {
@@ -54,7 +71,7 @@ public class PlayerManager {
             @Override
             public void trackLoaded(AudioTrack track) {
                 if (isLocal) {
-                    logger.info("`Playing TTS`");
+                    logger.info("Playing TTS");
                     guildMusicManager.getTrackScheduler().queue(track);
                     return;
                 }
