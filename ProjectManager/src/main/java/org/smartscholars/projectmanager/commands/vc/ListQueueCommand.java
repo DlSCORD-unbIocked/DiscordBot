@@ -44,7 +44,7 @@ public class ListQueueCommand implements ICommand {
     private static final int TRACKS_PER_PAGE = 10;
     public static List<List<Map.Entry<String, String>>> pages;
     public static List<Map.Entry<String, String>> tracksInfo;
-    private BlockingQueue<AudioTrack> queue;
+    private static BlockingQueue<AudioTrack> queue;
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
@@ -95,14 +95,8 @@ public class ListQueueCommand implements ICommand {
 
         prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
         nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
-        StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("remove-song")
-        .setPlaceholder("Select a song to remove")
-        .setRequiredRange(1, 10);
-        for (Map.Entry<String, String> track : tracksInfo) {
-            menuBuilder.addOption(track.getKey(), track.getValue());
-        }
 
-        StringSelectMenu menu = menuBuilder.build();
+        StringSelectMenu menu = buildStringSelectMenu(pages.get(currentPage - 1), currentPage).build();
 
         event.getHook().sendMessageEmbeds(embed.build()).addActionRow(prevButton, nextButton).addActionRow(menu).queue((message) -> {
             String userId = member.getId();
@@ -113,7 +107,7 @@ public class ListQueueCommand implements ICommand {
         });
     }
 
-   public List<Map.Entry<String, String>> convertQueueToListOfNamesAndTimes(BlockingQueue<AudioTrack> queue) {
+   public static List<Map.Entry<String, String>> convertQueueToListOfNamesAndTimes(BlockingQueue<AudioTrack> queue) {
         List<Map.Entry<String, String>> tracksInfo = new ArrayList<>();
 
         for (AudioTrack track : queue) {
@@ -126,7 +120,7 @@ public class ListQueueCommand implements ICommand {
         return tracksInfo;
     }
 
-    private String formatDuration(long durationMillis) {
+    private static String formatDuration(long durationMillis) {
         long hours = TimeUnit.MILLISECONDS.toHours(durationMillis);
         long minutes = TimeUnit.MILLISECONDS.toMinutes(durationMillis) % 60;
         long seconds = TimeUnit.MILLISECONDS.toSeconds(durationMillis) % 60;
@@ -147,7 +141,7 @@ public class ListQueueCommand implements ICommand {
         return embed;
     }
 
-    public boolean removeSong(int index, BlockingQueue<AudioTrack> queue) {
+    public static boolean removeSong(int index, BlockingQueue<AudioTrack> queue) {
         if (index >= 0 && index < queue.size()) {
             List<AudioTrack> list = new ArrayList<>(queue);
             list.remove(index);
@@ -159,8 +153,18 @@ public class ListQueueCommand implements ICommand {
         return false;
     }
 
-    public void updatePartitions() {
+    public static void updatePartitions() {
         tracksInfo = convertQueueToListOfNamesAndTimes(queue);
         pages = ListUtils.partition(tracksInfo, TRACKS_PER_PAGE);
+    }
+
+    public static StringSelectMenu.Builder buildStringSelectMenu(List<Map.Entry<String, String>> commands, int currentPage) {
+        StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("remove-song")
+        .setPlaceholder("Select a song to remove")
+        .setRequiredRange(1, pages.get(currentPage - 1).size());
+        for (Map.Entry<String, String> track : pages.get(currentPage - 1)) {
+            menuBuilder.addOption(track.getKey(), track.getValue());
+        }
+        return menuBuilder;
     }
 }

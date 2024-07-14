@@ -39,7 +39,8 @@ public class ProjectManager {
                 new ModalInteractionListener(schedulerService),
                 ButtonListener.getInstance(),
                 new ReactionListener(),
-                new ActivityReactionListener()
+                new ActivityReactionListener(),
+                new SelectionMenuListener()
         );
         logger.info("Registering event listeners.");
         EventListenerManager loader = new EventListenerManager(shardManager, eventListeners);

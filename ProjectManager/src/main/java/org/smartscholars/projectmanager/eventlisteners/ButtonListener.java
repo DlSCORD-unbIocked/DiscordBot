@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.smartscholars.projectmanager.commands.api.ImageOptionsCommand;
@@ -16,6 +17,7 @@ import org.smartscholars.projectmanager.commands.misc.RockPaperScissorsCommand;
 import org.smartscholars.projectmanager.commands.vc.ListQueueCommand;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -140,12 +142,11 @@ public class ButtonListener extends ListenerAdapter implements IEvent {
                 embed = ListQueueCommand.buildPageEmbed(ListQueueCommand.pages.get(currentPage - 1), currentPage, ListQueueCommand.pages.size());
             }
 
+            StringSelectMenu menu = ListQueueCommand.buildStringSelectMenu(ListQueueCommand.pages.get(currentPage - 1), currentPage).build();
             Button prev = Button.of(ButtonStyle.PRIMARY, "prev_queue_page", Emoji.fromUnicode("◀")).withDisabled(isFirstPage);
             Button next = Button.of(ButtonStyle.PRIMARY, "next_queue_page", Emoji.fromUnicode("▶")).withDisabled(isLastPage);
 
-            if (embed != null) {
-                event.getHook().editOriginalEmbeds(embed.build()).setComponents(ActionRow.of(prev, next)).queue();
-            }
+            event.getHook().editOriginalEmbeds(embed.build()).setComponents(ActionRow.of(prev, next), ActionRow.of(menu)).queue();
         }
 
         if (event.getComponentId().equals("rock") || event.getComponentId().equals("paper") || event.getComponentId().equals("scissors")) {
