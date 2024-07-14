@@ -76,7 +76,7 @@ public class PlayCommand implements ICommand {
             if (addPlaylist) event.getHook().sendMessage("`Adding playlist...`").queue();
             else event.getHook().sendMessage("`Loading track...`").queue();
 
-            playerManager.loadAndPlay(event.getGuild(), song, event.getChannel().asTextChannel(), addPlaylist);
+            playerManager.loadAndPlay(event.getGuild(), song, event.getChannel().asTextChannel(), addPlaylist, false);
         }
         catch (Exception e) {
             logger.error("Error playing song", e);

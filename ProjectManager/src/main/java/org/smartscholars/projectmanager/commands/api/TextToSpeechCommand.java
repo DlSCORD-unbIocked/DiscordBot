@@ -69,10 +69,13 @@ public class TextToSpeechCommand implements ICommand {
 
         File file = new File(outputPath.replace("\\", "/"));
         if (!file.exists()) {
-            logger.error("TTS file does not exist: {}", file.getAbsolutePath());
             event.getHook().sendMessage("An error occurred: TTS file does not exist.").queue();
+            return;
         }
-        //load file
+
+        PlayerManager playerManager = PlayerManager.get();
+        playerManager.loadAndPlay(event.getGuild(), file.getPath().replace("\\", "/"), event.getChannel().asTextChannel(), false, true);
+        event.getHook().sendMessage("`Playing TTS`").setEphemeral(true).queue();
     }
 
     private void generateTTS(String message, String voiceId) {

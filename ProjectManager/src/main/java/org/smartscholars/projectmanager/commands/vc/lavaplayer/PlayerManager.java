@@ -28,6 +28,7 @@ public class PlayerManager {
         AudioSourceManagers.registerRemoteSources(audioPlayerManager, com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class);
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
         AudioSourceManagers.registerLocalSource(audioPlayerManager);
+
     }
 
     public static PlayerManager get() {
@@ -45,12 +46,18 @@ public class PlayerManager {
         });
     }
 
-    public void loadAndPlay(Guild guild, String trackURL, TextChannel channel, boolean addPlaylist) {
-
+   public void loadAndPlay(Guild guild, String trackURL, TextChannel channel, boolean addPlaylist, boolean isLocal) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
+        logger.info("Loading track: {}", trackURL);
+
         audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
+                if (isLocal) {
+                    logger.info("`Playing TTS`");
+                    guildMusicManager.getTrackScheduler().queue(track);
+                    return;
+                }
                 try {
                     logger.info("Track loaded successfully: {}", track.getInfo().title);
                     guildMusicManager.getTrackScheduler().queue(track);

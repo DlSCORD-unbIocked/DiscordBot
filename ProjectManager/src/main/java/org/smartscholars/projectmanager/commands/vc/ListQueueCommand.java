@@ -71,6 +71,7 @@ public class ListQueueCommand implements ICommand {
 
         if (queue.isEmpty()) {
             event.getHook().sendMessage("**`The queue is empty`**").queue();
+            return;
         }
 
         tracksInfo = convertQueueToListOfNamesAndTimes(queue);
