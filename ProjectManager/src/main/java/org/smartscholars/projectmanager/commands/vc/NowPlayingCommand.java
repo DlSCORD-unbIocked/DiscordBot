@@ -54,6 +54,6 @@ public class NowPlayingCommand implements ICommand {
 
         String formattedTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
 
-        event.reply("`Currently playing: " + track.getInfo().title + "\nLength: " + formattedTime + "`").queue();
+        event.reply("**`Currently playing:`** `" + track.getInfo().title + "\nLength: " + formattedTime + "`").queue();
     }
 }

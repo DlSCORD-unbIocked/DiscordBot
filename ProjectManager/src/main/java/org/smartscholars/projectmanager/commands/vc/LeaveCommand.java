@@ -15,15 +15,15 @@ public class LeaveCommand implements ICommand {
         Guild guild = event.getGuild();
         assert guild != null;
         if (Objects.requireNonNull(event.getMember()).getVoiceState() == null || event.getMember().getVoiceState().getChannel() == null) {
-            event.reply("You need to be in a voice channel to use this command").queue();
+            event.reply("`You need to be in a voice channel to use this command`").queue();
             return;
         }
         else if (guild.getAudioManager().isConnected()) {
             guild.getAudioManager().closeAudioConnection();
-            event.reply("Leaving voice channel").queue();
+            event.reply("`Leaving voice channel`").queue();
         }
         else {
-            event.reply("I'm not in a voice channel").queue();
+            event.reply("`I'm not in a voice channel`").queue();
         }
     }
 }

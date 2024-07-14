@@ -66,12 +66,12 @@ public class PlayerManager {
                 List<AudioTrack> tracks = playlist.getTracks();
                 if (addPlaylist) {
                     logger.info("Playlist loaded successfully: {}", playlist.getName());
-                    channel.sendMessage("Adding **" + playlist.getTracks().size() +"** tracks to queue from playlist: " + playlist.getName()).queue();
+                    channel.sendMessage("`Adding` **`" + playlist.getTracks().size() +"`** `tracks to queue from playlist: " + playlist.getName() + "`").queue();
                     tracks.forEach(guildMusicManager.getTrackScheduler()::queue);
                 }
                 else {
                     logger.info("Track loaded successfully: {}", playlist.getTracks().getFirst().getInfo().title);
-                    channel.sendMessage("`Track loaded successfully: " + playlist.getTracks().getFirst().getInfo().title + "`").queue();
+                    channel.sendMessage("**`Track loaded successfully:`** `" + playlist.getTracks().getFirst().getInfo().title + "`").queue();
                     guildMusicManager.getTrackScheduler().queue(playlist.getTracks().getFirst());
                 }
             }

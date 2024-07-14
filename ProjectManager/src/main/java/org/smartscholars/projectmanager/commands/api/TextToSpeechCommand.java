@@ -1,6 +1,7 @@
 package org.smartscholars.projectmanager.commands.api;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -9,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
+import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
+import org.smartscholars.projectmanager.util.VcUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,24 +46,33 @@ public class TextToSpeechCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-        if (!Objects.requireNonNull(event.getGuild()).getAudioManager().isConnected()) {
-            event.reply("You need to be in a voice channel to use this command").queue();
-            return;
-        }
-        VoiceChannel userVoiceChannel = (VoiceChannel) Objects.requireNonNull(Objects.requireNonNull(event.getMember()).getVoiceState()).getChannel();
-        VoiceChannel botVoiceChannel = (VoiceChannel) event.getGuild().getAudioManager().getConnectedChannel();
-
-        if (userVoiceChannel == null || !userVoiceChannel.equals(botVoiceChannel)) {
-            event.reply("You need to be in the same voice channel as the bot to use this command").queue();
-            return;
-        }
-
         event.deferReply().queue();
+        Member member = event.getMember();
+        assert member != null;
+
+        if(!VcUtil.isMemberInVoiceChannel(member)) {
+            event.getHook().sendMessage("`You need to be in a voice channel`").queue();
+            return;
+        }
+
+        Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
+
+        if(!VcUtil.isSelfInVoiceChannel(self)) {
+            event.getGuild().getAudioManager().openAudioConnection(member.getVoiceState().getChannel());
+        }
+        else if(!VcUtil.isMemberInSameVoiceChannel(member, self)) {
+            event.getHook().sendMessage("`You need to be in the same channel as me`").queue();
+            return;
+        }
+
+        //generateTTS(Objects.requireNonNull(event.getOption("message")).getAsString(), event.getOption("voice_id") != null ? Objects.requireNonNull(event.getOption("voice_id")).getAsString() : "29vD33N1CtxCmqQRPOHJ");
+
         File file = new File(outputPath.replace("\\", "/"));
         if (!file.exists()) {
             logger.error("TTS file does not exist: {}", file.getAbsolutePath());
             event.getHook().sendMessage("An error occurred: TTS file does not exist.").queue();
         }
+        //load file
     }
 
     private void generateTTS(String message, String voiceId) {

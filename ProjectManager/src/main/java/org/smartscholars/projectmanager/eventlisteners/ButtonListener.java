@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 import org.smartscholars.projectmanager.commands.api.ImageOptionsCommand;
 import org.smartscholars.projectmanager.commands.api.VoiceIdOptionsCommand;
 import org.smartscholars.projectmanager.commands.misc.RockPaperScissorsCommand;
@@ -20,8 +21,9 @@ import java.util.Objects;
 
 public class ButtonListener extends ListenerAdapter implements IEvent {
 
-    private final Map<String, String> messageIdToUserIdMap = new HashMap<>();
+    private static final Map<String, String> messageIdToUserIdMap = new HashMap<>();
     private static ButtonListener instance;
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(ButtonListener.class);
     public ButtonListener() {}
 
     @Override
@@ -31,7 +33,9 @@ public class ButtonListener extends ListenerAdapter implements IEvent {
 
     @Override
     public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
+        logger.info(messageIdToUserIdMap.toString());
         String userId = messageIdToUserIdMap.get(event.getMessageId());
+        logger.info("Button interaction detected from user: {}", userId);
         if (userId == null || !userId.equals(event.getUser().getId())) {
             event.reply("You are not allowed to interact with this button.").setEphemeral(true).queue();
             return;

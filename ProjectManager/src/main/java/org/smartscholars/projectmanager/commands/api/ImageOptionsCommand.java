@@ -11,6 +11,7 @@ import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.misc.HelpCommand;
+import org.smartscholars.projectmanager.eventlisteners.ButtonListener;
 import org.smartscholars.projectmanager.util.ListUtils;
 
 import java.awt.*;
@@ -32,7 +33,7 @@ public class ImageOptionsCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
-
+        event.deferReply().queue();
         int currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
 
 
@@ -52,9 +53,13 @@ public class ImageOptionsCommand implements ICommand {
 
         EmbedBuilder embed = buildPageEmbed(pages.get(currentPage - 1), currentPage, pages.size());
 
-        event.replyEmbeds(embed.build()).addActionRow(galleryButton).addActionRow(prev, next).queue();
+        event.getHook().sendMessageEmbeds(embed.build()).addActionRow(galleryButton).addActionRow(prev, next).queue((message) -> {
+            String userId = Objects.requireNonNull(event.getMember()).getId();
+            String messageId = message.getId();
 
-
+            ButtonListener buttonListener = ButtonListener.getInstance();
+            buttonListener.getMessageIdToUserIdMap().put(messageId, userId);
+        });
     }
 
     private static java.util.List<java.util.List<String>> paginateCommands(java.util.List<String> commands, int pageSize) {

@@ -37,7 +37,7 @@ public class ProjectManager {
         List<IEvent> eventListeners = List.of(
                 new OnReadyListener(commandManager),
                 new ModalInteractionListener(schedulerService),
-                new ButtonListener(),
+                ButtonListener.getInstance(),
                 new ReactionListener(),
                 new ActivityReactionListener()
         );

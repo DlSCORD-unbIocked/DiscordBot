@@ -44,23 +44,24 @@ public class ListQueueCommand implements ICommand {
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
+        event.deferReply().queue();
         Member member = event.getMember();
         assert member != null;
 
         if(!VcUtil.isMemberInVoiceChannel(member)) {
-            event.reply("You need to be in a voice channel").queue();
+            event.getHook().sendMessage("You need to be in a voice channel").queue();
             return;
         }
 
         Member self = Objects.requireNonNull(event.getGuild()).getSelfMember();
 
         if(!VcUtil.isSelfInVoiceChannel(self)) {
-            event.reply("I am not in an audio channel").queue();
+            event.getHook().sendMessage("I am not in an audio channel").queue();
             return;
         }
 
         if(!VcUtil.isMemberInSameVoiceChannel(member, self)) {
-            event.reply("You are not in the same channel as me").queue();
+            event.getHook().sendMessage("You are not in the same channel as me").queue();
             return;
         }
 
@@ -69,7 +70,7 @@ public class ListQueueCommand implements ICommand {
         BlockingQueue<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getQueue();
 
         if (queue.isEmpty()) {
-            event.reply("**`The queue is empty`**").queue();
+            event.getHook().sendMessage("**`The queue is empty`**").queue();
         }
 
         tracksInfo = convertQueueToListOfNamesAndTimes(queue);
@@ -92,13 +93,10 @@ public class ListQueueCommand implements ICommand {
         prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
         nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
 
-        event.replyEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue(message -> {
-            // Assuming 'member' is the Member object of the user who initiated the command
+        event.getHook().sendMessageEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue((message) -> {
             String userId = member.getId();
             String messageId = message.getId();
 
-            // Access the ButtonListener instance and update the map
-            // This assumes you have a way to access the ButtonListener instance. If not, you might need to make it accessible or manage the map in a shared location.
             ButtonListener buttonListener = ButtonListener.getInstance();
             buttonListener.getMessageIdToUserIdMap().put(messageId, userId);
         });

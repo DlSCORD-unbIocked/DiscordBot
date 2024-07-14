@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
+import org.smartscholars.projectmanager.eventlisteners.ButtonListener;
 import org.smartscholars.projectmanager.util.ListUtils;
 
 import java.awt.*;
@@ -107,7 +108,13 @@ public class VoiceIdOptionsCommand implements ICommand {
             prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
             nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
 
-            event.getHook().sendMessageEmbeds(embed.build()).addActionRow(linkButton).addActionRow(prevButton, nextButton).queue();
+            event.getHook().sendMessageEmbeds(embed.build()).addActionRow(linkButton).addActionRow(prevButton, nextButton).queue((message) -> {
+                String userId = Objects.requireNonNull(event.getMember()).getId();
+                String messageId = message.getId();
+
+                ButtonListener buttonListener = ButtonListener.getInstance();
+                buttonListener.getMessageIdToUserIdMap().put(messageId, userId);
+            });
         }
         catch (IOException | InterruptedException e) {
             logger.error("Failed to fetch voice ID options", e);
