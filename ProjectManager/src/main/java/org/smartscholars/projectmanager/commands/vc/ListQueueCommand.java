@@ -2,6 +2,7 @@ package org.smartscholars.projectmanager.commands.vc;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -44,7 +45,7 @@ public class ListQueueCommand implements ICommand {
     private static final int TRACKS_PER_PAGE = 10;
     public static List<List<Map.Entry<String, String>>> pages;
     public static List<Map.Entry<String, String>> tracksInfo;
-    private static BlockingQueue<AudioTrack> queue;
+    public static BlockingQueue<AudioTrack> queue;
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
@@ -78,7 +79,7 @@ public class ListQueueCommand implements ICommand {
             return;
         }
 
-        updatePartitions();
+        updatePartitions(event.getGuild());
 
         int currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
         int totalSize = tracksInfo.size();
@@ -141,19 +142,8 @@ public class ListQueueCommand implements ICommand {
         return embed;
     }
 
-    public static boolean removeSong(int index, BlockingQueue<AudioTrack> queue) {
-        if (index >= 0 && index < queue.size()) {
-            List<AudioTrack> list = new ArrayList<>(queue);
-            list.remove(index);
-            queue.clear();
-            queue.addAll(list);
-            updatePartitions();
-            return true;
-        }
-        return false;
-    }
-
-    public static void updatePartitions() {
+    public static void updatePartitions(Guild guild) {
+        queue = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getQueue();
         tracksInfo = convertQueueToListOfNamesAndTimes(queue);
         pages = ListUtils.partition(tracksInfo, TRACKS_PER_PAGE);
     }
