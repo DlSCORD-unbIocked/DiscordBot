@@ -9,6 +9,8 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.smartscholars.projectmanager.commands.CommandInfo;
 import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
@@ -22,6 +24,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @CommandInfo(
     name = "listqueue",
@@ -41,6 +44,7 @@ public class ListQueueCommand implements ICommand {
     private static final int TRACKS_PER_PAGE = 10;
     public static List<List<Map.Entry<String, String>>> pages;
     public static List<Map.Entry<String, String>> tracksInfo;
+    private BlockingQueue<AudioTrack> queue;
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
@@ -67,21 +71,19 @@ public class ListQueueCommand implements ICommand {
 
         tracksInfo = new ArrayList<>();
         pages = new ArrayList<>();
-        BlockingQueue<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getQueue();
+        queue = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getQueue();
 
         if (queue.isEmpty()) {
             event.getHook().sendMessage("**`The queue is empty`**").queue();
             return;
         }
 
-        tracksInfo = convertQueueToListOfNamesAndTimes(queue);
+        updatePartitions();
 
         int currentPage = event.getOption("page") != null ? Objects.requireNonNull(event.getOption("page")).getAsInt() : 1;
         int totalSize = tracksInfo.size();
         boolean isFirstPage = currentPage == 1;
         boolean isLastPage = currentPage >= (totalSize + TRACKS_PER_PAGE - 1) / TRACKS_PER_PAGE;
-
-        pages = ListUtils.partition(tracksInfo, TRACKS_PER_PAGE);
 
         if (currentPage > pages.size()) currentPage = pages.size();
         if (currentPage < 1) currentPage = 1;
@@ -93,8 +95,16 @@ public class ListQueueCommand implements ICommand {
 
         prevButton = isFirstPage ? prevButton.asDisabled() : prevButton;
         nextButton = isLastPage ? nextButton.asDisabled() : nextButton;
+        StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("remove-song")
+        .setPlaceholder("Select a song to remove")
+        .setRequiredRange(1, 10);
+        for (Map.Entry<String, String> track : tracksInfo) {
+            menuBuilder.addOption(track.getKey(), track.getValue());
+        }
 
-        event.getHook().sendMessageEmbeds(embed.build()).addActionRow(prevButton, nextButton).queue((message) -> {
+        StringSelectMenu menu = menuBuilder.build();
+
+        event.getHook().sendMessageEmbeds(embed.build()).addActionRow(prevButton, nextButton).addActionRow(menu).queue((message) -> {
             String userId = member.getId();
             String messageId = message.getId();
 
@@ -122,7 +132,8 @@ public class ListQueueCommand implements ICommand {
         long seconds = TimeUnit.MILLISECONDS.toSeconds(durationMillis) % 60;
         if (hours > 0) {
             return String.format("%02d:%02d:%02d", hours, minutes, seconds);
-        } else {
+        }
+        else {
             return String.format("%02d:%02d", minutes, seconds);
         }
     }
@@ -134,5 +145,22 @@ public class ListQueueCommand implements ICommand {
         embed.setColor(new Color(0x1F8B4C));
         commands.forEach(entry -> embed.addField(entry.getValue(), entry.getKey(), false));
         return embed;
+    }
+
+    public boolean removeSong(int index, BlockingQueue<AudioTrack> queue) {
+        if (index >= 0 && index < queue.size()) {
+            List<AudioTrack> list = new ArrayList<>(queue);
+            list.remove(index);
+            queue.clear();
+            queue.addAll(list);
+            updatePartitions();
+            return true;
+        }
+        return false;
+    }
+
+    public void updatePartitions() {
+        tracksInfo = convertQueueToListOfNamesAndTimes(queue);
+        pages = ListUtils.partition(tracksInfo, TRACKS_PER_PAGE);
     }
 }
