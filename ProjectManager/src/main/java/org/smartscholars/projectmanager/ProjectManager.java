@@ -40,7 +40,7 @@ public class ProjectManager {
                 ButtonListener.getInstance(),
                 new ReactionListener(),
                 new ActivityReactionListener(),
-                new SelectionMenuListener()
+                SelectionMenuListener.getInstance()
         );
         logger.info("Registering event listeners.");
         EventListenerManager loader = new EventListenerManager(shardManager, eventListeners);

@@ -17,6 +17,7 @@ import org.smartscholars.projectmanager.commands.CommandOption;
 import org.smartscholars.projectmanager.commands.ICommand;
 import org.smartscholars.projectmanager.commands.vc.lavaplayer.PlayerManager;
 import org.smartscholars.projectmanager.eventlisteners.ButtonListener;
+import org.smartscholars.projectmanager.eventlisteners.SelectionMenuListener;
 import org.smartscholars.projectmanager.util.ListUtils;
 import org.smartscholars.projectmanager.util.VcUtil;
 
@@ -104,7 +105,10 @@ public class ListQueueCommand implements ICommand {
             String messageId = message.getId();
 
             ButtonListener buttonListener = ButtonListener.getInstance();
+            SelectionMenuListener selectionMenuListener = SelectionMenuListener.getInstance();
+
             buttonListener.getMessageIdToUserIdMap().put(messageId, userId);
+            selectionMenuListener.getMessageIdToUserIdMap().put(messageId, userId);
         });
     }
 
@@ -153,7 +157,7 @@ public class ListQueueCommand implements ICommand {
         .setPlaceholder("Select a song to remove")
         .setRequiredRange(1, pages.get(currentPage - 1).size());
         for (Map.Entry<String, String> track : pages.get(currentPage - 1)) {
-            menuBuilder.addOption(track.getKey(), track.getValue());
+            menuBuilder.addOption(track.getKey(), track.getKey());
         }
         return menuBuilder;
     }
